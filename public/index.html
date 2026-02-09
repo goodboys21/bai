@@ -236,8 +236,7 @@
             </div>
         </footer>
     </div>
-
-    <script>
+<script>
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     const chatWindow = document.getElementById('chat-window');
@@ -253,9 +252,9 @@
     const overlay = document.getElementById('overlay-bg');
 
     // --- STATE MANAGEMENT ---
-    // Mengambil session terakhir dan riwayat chat dari LocalStorage
-    let currentSessionId = localStorage.getItem('bagus_ai_session') || null;
+    // Menyimpan riwayat beserta seluruh isi pesan
     let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+    let currentSessionId = localStorage.getItem('bagus_ai_session') || null;
     let isChatStarted = false;
 
     function forceScroll() { appContainer.scrollTop = appContainer.scrollHeight; }
@@ -266,14 +265,14 @@
             document.getElementById('preloader-overlay').style.display = 'none';
             content.style.filter = 'blur(0px)';
             type();
-            renderHistory(); // Render riwayat saat aplikasi dibuka
+            renderHistory();
         }, 1500);
     };
 
     // --- NEW SESSION LOGIC ---
     document.getElementById('new-session-btn').onclick = () => {
         isChatStarted = false;
-        currentSessionId = null; // Reset session ID untuk percakapan baru
+        currentSessionId = null;
         localStorage.removeItem('bagus_ai_session');
         chatWindow.innerHTML = ''; 
         chatWindow.style.display = 'none';
@@ -319,34 +318,72 @@
         renderHistory();
     }
 
+    // Fungsi untuk memuat kembali isi chat dari riwayat
     function loadSession(sid) {
+        const session = chatHistory.find(h => h.sessionId === sid);
+        if (!session) return;
+
         currentSessionId = sid;
         localStorage.setItem('bagus_ai_session', sid);
-        // Menutup sidebar setelah memilih riwayat
+        
+        // Reset Tampilan Chat
+        chatWindow.innerHTML = '';
+        chatWindow.style.display = 'flex';
+        welcomeView.style.display = 'none';
+        isChatStarted = true;
+
+        // Render ulang semua pesan yang tersimpan di sesi tersebut
+        session.messages.forEach(msg => {
+            const bubble = document.createElement('div');
+            bubble.className = `bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
+            
+            if (msg.role === 'ai') {
+                const cont = document.createElement('div');
+                bubble.appendChild(cont);
+                chatWindow.appendChild(bubble);
+                typeAiResponse(cont, formatAiResponse(msg.text), true); // true = no typing effect for history
+            } else {
+                bubble.innerText = msg.text;
+                chatWindow.appendChild(bubble);
+            }
+        });
+
         sidebar.classList.remove('open');
         overlay.style.opacity = '0';
         setTimeout(() => overlay.style.display = 'none', 300);
-        // Opsional: Kamu bisa menambahkan logika fetch chat lama di sini jika backend mendukung
+        forceScroll();
     }
 
     // --- FORMATTING LOGIC ---
     function formatAiResponse(text) {
         if (!text) return "";
         return text
-            // Link HTTPS menjadi warna biru
             .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #60a5fa; text-decoration: underline;">Link</a>')
-            // Format Bold **Tebal**
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            // Handle Newline \n menjadi spasi ke bawah
             .replace(/\n/g, '<br>');
     }
 
     // --- AI TYPING & RESPONSE ---
-    function typeAiResponse(element, htmlText) {
-        // Menampilkan HTML secara langsung agar format link dan tebal tidak rusak
+    function typeAiResponse(element, htmlText, skipTyping = false) {
         element.innerHTML = htmlText; 
         forceScroll();
         
+        if (skipTyping) {
+            addCopyBtn(element);
+            return;
+        }
+
+        // Animasi muncul sederhana jika tidak skip typing
+        element.style.opacity = 0;
+        setTimeout(() => { 
+            element.style.transition = "opacity 0.5s";
+            element.style.opacity = 1; 
+            addCopyBtn(element);
+        }, 50);
+    }
+
+    function addCopyBtn(element) {
+        if (element.parentElement.querySelector('.copy-btn')) return;
         const cB = document.createElement('div');
         cB.className = 'copy-btn';
         cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin';
@@ -356,6 +393,23 @@
             setTimeout(() => cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin', 2000);
         };
         element.parentElement.appendChild(cB);
+    }
+
+    // Fungsi untuk menyimpan setiap pesan ke memori
+    function saveChatToMemory(sessionId, userMsg, aiMsg) {
+        let session = chatHistory.find(h => h.sessionId === sessionId);
+        if (!session) {
+            chatHistory.unshift({
+                title: userMsg.substring(0, 20) + (userMsg.length > 20 ? '...' : ''),
+                sessionId: sessionId,
+                messages: []
+            });
+            session = chatHistory[0];
+        }
+        session.messages.push({ role: 'user', text: userMsg });
+        session.messages.push({ role: 'ai', text: aiMsg });
+        localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
+        renderHistory();
     }
 
     // --- SEND LOGIC ---
@@ -393,32 +447,25 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     message: val,
-                    sessionId: currentSessionId // Mengirim session ID yang tersimpan
+                    sessionId: currentSessionId 
                 })
             });
 
             const data = await response.json();
             aB.innerHTML = ''; 
 
-            // Menyimpan sessionId baru dari respons Gemini ke LocalStorage
+            const aiResponse = data.response || data.text;
+            
             if (data.sessionId) {
                 currentSessionId = data.sessionId;
                 localStorage.setItem('bagus_ai_session', data.sessionId);
-
-                // Update riwayat jika sesi ini belum ada di daftar
-                if (!chatHistory.find(h => h.sessionId === data.sessionId)) {
-                    chatHistory.unshift({
-                        title: val.substring(0, 20) + (val.length > 20 ? '...' : ''),
-                        sessionId: data.sessionId
-                    });
-                    localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
-                    renderHistory();
-                }
+                // Simpan pesan ke history lokal
+                saveChatToMemory(currentSessionId, val, aiResponse);
             }
 
             const textCont = document.createElement('div');
             aB.appendChild(textCont);
-            typeAiResponse(textCont, formatAiResponse(data.response || data.text));
+            typeAiResponse(textCont, formatAiResponse(aiResponse));
 
         } catch (error) {
             aB.innerHTML = "Waduh Sob, Bagus Ai lagi pusing. Coba lagi ya!";
