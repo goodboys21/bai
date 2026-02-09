@@ -252,7 +252,6 @@
     const overlay = document.getElementById('overlay-bg');
 
     // --- STATE MANAGEMENT ---
-    // Menyimpan riwayat beserta seluruh isi pesan
     let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
     let currentSessionId = localStorage.getItem('bagus_ai_session') || null;
     let isChatStarted = false;
@@ -260,20 +259,67 @@
     function forceScroll() { appContainer.scrollTop = appContainer.scrollHeight; }
 
     // --- INITIALIZATION ---
-    window.onload = () => {
+    window.onload = async () => {
+        // Mendeteksi ID sesi dari URL domain.com/ID_SESI
+        const pathId = window.location.pathname.split('/')[1]; 
+        
+        if (pathId && pathId.length > 5) {
+            currentSessionId = pathId;
+            await loadFromDatabase(pathId); // Ambil data dari GitHub via API
+        } else {
+            renderHistory(); // Render riwayat lokal jika di halaman utama
+        }
+
         setTimeout(() => {
             document.getElementById('preloader-overlay').style.display = 'none';
             content.style.filter = 'blur(0px)';
             type();
-            renderHistory();
         }, 1500);
     };
+
+    // --- GITHUB DATABASE LOAD ---
+    async function loadFromDatabase(sid) {
+        try {
+            // Memanggil endpoint load yang sudah dibuat di backend
+            const res = await fetch(`/api/load/${sid}`);
+            if (!res.ok) throw new Error("Sesi tidak ditemukan");
+            
+            const messages = await res.json();
+            
+            chatWindow.innerHTML = '';
+            chatWindow.style.display = 'flex';
+            welcomeView.style.display = 'none';
+            isChatStarted = true;
+
+            // Membalikkan urutan: pertanyaan awal muncul di paling atas layar
+            messages.reverse().forEach(msg => {
+                const bubble = document.createElement('div');
+                // Sesuaikan role dari JSON GitHub (user/bot)
+                bubble.className = `bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
+                
+                if (msg.role === 'bot') {
+                    const cont = document.createElement('div');
+                    bubble.appendChild(cont);
+                    chatWindow.appendChild(bubble);
+                    typeAiResponse(cont, formatAiResponse(msg.text), true); 
+                } else {
+                    bubble.innerText = msg.text;
+                    chatWindow.appendChild(bubble);
+                }
+            });
+            forceScroll();
+        } catch (e) {
+            console.error("Gagal memuat database GitHub:", e.message);
+        }
+    }
 
     // --- NEW SESSION LOGIC ---
     document.getElementById('new-session-btn').onclick = () => {
         isChatStarted = false;
         currentSessionId = null;
         localStorage.removeItem('bagus_ai_session');
+        // Reset URL kembali ke domain utama
+        window.history.pushState({}, '', '/');
         chatWindow.innerHTML = ''; 
         chatWindow.style.display = 'none';
         welcomeView.style.display = 'flex'; 
@@ -318,40 +364,9 @@
         renderHistory();
     }
 
-    // Fungsi untuk memuat kembali isi chat dari riwayat
     function loadSession(sid) {
-        const session = chatHistory.find(h => h.sessionId === sid);
-        if (!session) return;
-
-        currentSessionId = sid;
-        localStorage.setItem('bagus_ai_session', sid);
-        
-        // Reset Tampilan Chat
-        chatWindow.innerHTML = '';
-        chatWindow.style.display = 'flex';
-        welcomeView.style.display = 'none';
-        isChatStarted = true;
-
-        // Render ulang semua pesan yang tersimpan di sesi tersebut
-        session.messages.forEach(msg => {
-            const bubble = document.createElement('div');
-            bubble.className = `bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
-            
-            if (msg.role === 'ai') {
-                const cont = document.createElement('div');
-                bubble.appendChild(cont);
-                chatWindow.appendChild(bubble);
-                typeAiResponse(cont, formatAiResponse(msg.text), true); // true = no typing effect for history
-            } else {
-                bubble.innerText = msg.text;
-                chatWindow.appendChild(bubble);
-            }
-        });
-
-        sidebar.classList.remove('open');
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.style.display = 'none', 300);
-        forceScroll();
+        // Redirect ke link sesi agar memicu load dari database GitHub
+        window.location.href = `/${sid}`;
     }
 
     // --- FORMATTING LOGIC ---
@@ -367,13 +382,7 @@
     function typeAiResponse(element, htmlText, skipTyping = false) {
         element.innerHTML = htmlText; 
         forceScroll();
-        
-        if (skipTyping) {
-            addCopyBtn(element);
-            return;
-        }
-
-        // Animasi muncul sederhana jika tidak skip typing
+        if (skipTyping) { addCopyBtn(element); return; }
         element.style.opacity = 0;
         setTimeout(() => { 
             element.style.transition = "opacity 0.5s";
@@ -395,23 +404,6 @@
         element.parentElement.appendChild(cB);
     }
 
-    // Fungsi untuk menyimpan setiap pesan ke memori
-    function saveChatToMemory(sessionId, userMsg, aiMsg) {
-        let session = chatHistory.find(h => h.sessionId === sessionId);
-        if (!session) {
-            chatHistory.unshift({
-                title: userMsg.substring(0, 20) + (userMsg.length > 20 ? '...' : ''),
-                sessionId: sessionId,
-                messages: []
-            });
-            session = chatHistory[0];
-        }
-        session.messages.push({ role: 'user', text: userMsg });
-        session.messages.push({ role: 'ai', text: aiMsg });
-        localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
-        renderHistory();
-    }
-
     // --- SEND LOGIC ---
     async function sendMessage() {
         const val = input.value.trim();
@@ -430,7 +422,6 @@
         uB.className = 'bubble user-bubble';
         uB.innerText = val;
         chatWindow.appendChild(uB);
-
         input.value = '';
         input.style.height = 'auto';
         forceScroll();
@@ -445,22 +436,30 @@
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    message: val,
-                    sessionId: currentSessionId 
-                })
+                body: JSON.stringify({ message: val, sessionId: currentSessionId })
             });
 
             const data = await response.json();
             aB.innerHTML = ''; 
-
             const aiResponse = data.response || data.text;
             
             if (data.sessionId) {
+                // Decode sessionId untuk mendapatkan ID murni buat penamaan file
+                const decoded = JSON.parse(atob(data.sessionId));
+                const fileId = decoded.resumeArray[0] || Date.now();
+                
                 currentSessionId = data.sessionId;
                 localStorage.setItem('bagus_ai_session', data.sessionId);
-                // Simpan pesan ke history lokal
-                saveChatToMemory(currentSessionId, val, aiResponse);
+                
+                // Perbarui URL browser tanpa reload
+                window.history.pushState({}, '', `/${fileId}`);
+                
+                // Simpan metadata ke riwayat lokal sidebar
+                if (!chatHistory.find(h => h.sessionId === fileId)) {
+                    chatHistory.unshift({ title: val.substring(0, 20), sessionId: fileId });
+                    localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
+                    renderHistory();
+                }
             }
 
             const textCont = document.createElement('div');
@@ -468,8 +467,7 @@
             typeAiResponse(textCont, formatAiResponse(aiResponse));
 
         } catch (error) {
-            aB.innerHTML = "Waduh Sob, Bagus Ai lagi pusing. Coba lagi ya!";
-            console.error(error);
+            aB.innerHTML = "Waduh Sob, Bagus Ai lagi pusing.";
         }
     }
 
@@ -526,5 +524,6 @@
 
     function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
 </script>
+
 </body>
 </html>
