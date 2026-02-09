@@ -2,12 +2,13 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/chat.js",
+      "src": "api/*.js",
       "use": "@vercel/node"
     },
-    { 
-      "src": "public/**/*", 
-      "use": "@vercel/static" }
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
   ],
   "rewrites": [
     {
@@ -15,8 +16,12 @@
       "destination": "api/chat.js"
     },
     {
+      "source": "/api/load/:sessionId",
+      "destination": "api/load.js"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/public/$1"
+      "destination": "/public/index.html"
     }
   ]
 }
