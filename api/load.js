@@ -33,7 +33,7 @@ app.get('/api/load/:sessionId', async (req, res) => {
         }
 
         // URL Raw GitHub untuk mengambil konten file JSON secara langsung
-        const url = `https://raw.githubusercontent.com/${config.username}/${config.repo}/${config.branch}/sessions/${sessionId}.json`;
+        const url = `https://raw.githubusercontent.com/${config.username}/coigus/${config.branch}/sessions/${sessionId}.json`;
         
         // Kita gunakan header Authorization agar bisa mengakses file di repo PRIVATE
         const response = await axios.get(url, {
