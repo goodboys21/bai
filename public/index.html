@@ -264,10 +264,10 @@
         const pathId = window.location.pathname.split('/')[1]; 
         
         if (pathId && pathId.length > 5) {
-            currentSessionId = pathId;
-            await loadFromDatabase(pathId); // Ambil data dari GitHub via API
+            currentSessionId = null; // Biarkan loadFromDatabase yang menentukan session murni
+            await loadFromDatabase(pathId); 
         } else {
-            renderHistory(); // Render riwayat lokal jika di halaman utama
+            renderHistory();
         }
 
         setTimeout(() => {
@@ -277,27 +277,35 @@
         }, 1500);
     };
 
-    // --- GITHUB DATABASE LOAD ---
+    // --- GITHUB DATABASE LOAD (FIXED) ---
     async function loadFromDatabase(sid) {
         try {
-            // Memanggil endpoint load yang sudah dibuat di backend
-            const res = await fetch(`/api/load/${sid}`);
-            if (!res.ok) throw new Error("Sesi tidak ditemukan");
-            
-            const messages = await res.json();
-            
-            chatWindow.innerHTML = '';
+            chatWindow.innerHTML = '<div class="bubble ai-bubble"><em>Memuat percakapan Bagus Ai...</em></div>';
             chatWindow.style.display = 'flex';
             welcomeView.style.display = 'none';
             isChatStarted = true;
 
-            // Membalikkan urutan: pertanyaan awal muncul di paling atas layar
+            const res = await fetch(`/api/load/${sid}`);
+            if (!res.ok) throw new Error("Sesi tidak ditemukan");
+            
+            const messages = await res.json();
+            chatWindow.innerHTML = ''; 
+
+            // Update Sidebar History agar tidak hilang saat refresh
+            let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+            if (!history.find(h => h.sessionId === sid) && messages.length > 0) {
+                const userTitle = messages.find(m => m.role === 'user')?.text || "Percakapan Lama";
+                history.unshift({ title: userTitle.substring(0, 20) + "...", sessionId: sid });
+                localStorage.setItem('bagus_ai_history', JSON.stringify(history));
+            }
+            renderHistory();
+
+            // Render Bubble Chat (Balik urutan agar pertanyaan awal di atas)
             messages.reverse().forEach(msg => {
                 const bubble = document.createElement('div');
-                // Sesuaikan role dari JSON GitHub (user/bot)
                 bubble.className = `bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
                 
-                if (msg.role === 'bot') {
+                if (msg.role === 'bot' || msg.role === 'ai') {
                     const cont = document.createElement('div');
                     bubble.appendChild(cont);
                     chatWindow.appendChild(bubble);
@@ -307,9 +315,10 @@
                     chatWindow.appendChild(bubble);
                 }
             });
-            forceScroll();
+            
+            setTimeout(forceScroll, 100);
         } catch (e) {
-            console.error("Gagal memuat database GitHub:", e.message);
+            chatWindow.innerHTML = `<div class="bubble ai-bubble">Gagal muat: ${e.message}</div>`;
         }
     }
 
@@ -318,7 +327,6 @@
         isChatStarted = false;
         currentSessionId = null;
         localStorage.removeItem('bagus_ai_session');
-        // Reset URL kembali ke domain utama
         window.history.pushState({}, '', '/');
         chatWindow.innerHTML = ''; 
         chatWindow.style.display = 'none';
@@ -346,6 +354,7 @@
 
     function renderHistory() {
         historyList.innerHTML = '';
+        chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
         chatHistory.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = 'history-item';
@@ -365,7 +374,6 @@
     }
 
     function loadSession(sid) {
-        // Redirect ke link sesi agar memicu load dari database GitHub
         window.location.href = `/${sid}`;
     }
 
@@ -444,20 +452,18 @@
             const aiResponse = data.response || data.text;
             
             if (data.sessionId) {
-                // Decode sessionId untuk mendapatkan ID murni buat penamaan file
                 const decoded = JSON.parse(atob(data.sessionId));
                 const fileId = decoded.resumeArray[0] || Date.now();
                 
                 currentSessionId = data.sessionId;
                 localStorage.setItem('bagus_ai_session', data.sessionId);
                 
-                // Perbarui URL browser tanpa reload
                 window.history.pushState({}, '', `/${fileId}`);
                 
-                // Simpan metadata ke riwayat lokal sidebar
-                if (!chatHistory.find(h => h.sessionId === fileId)) {
-                    chatHistory.unshift({ title: val.substring(0, 20), sessionId: fileId });
-                    localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
+                let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+                if (!history.find(h => h.sessionId === fileId)) {
+                    history.unshift({ title: val.substring(0, 20), sessionId: fileId });
+                    localStorage.setItem('bagus_ai_history', JSON.stringify(history));
                     renderHistory();
                 }
             }
@@ -473,17 +479,7 @@
 
     sendBtn.onclick = sendMessage;
 
-    // --- VIEWPORT & UI HELPERS ---
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            const vv = window.visualViewport;
-            content.style.height = vv.height + "px";
-            content.style.top = vv.offsetTop + "px";
-            window.scrollTo(0, 0);
-            if (isChatStarted) forceScroll();
-        });
-    }
-
+    // --- UI HELPERS ---
     const phrases = ["Bagus!", "Sob!", "Kreator!"];
     let pIdx = 0, cIdx = 0, isDel = false;
     function type() {
@@ -519,11 +515,9 @@
         }
     };
     document.getElementById('remove-img').onclick = () => { fileInput.value = ''; innerPreview.style.display = 'none'; };
-
     input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
 
     function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
 </script>
-
 </body>
 </html>
