@@ -318,13 +318,11 @@
         // --- SEND LOGIC ---
         async function sendMessage() {
     const val = input.value.trim();
-    const hasImg = innerPreview.style.display === 'block';
-    if (!val && !hasImg) return;
+    if (!val) return;
 
-    // UI Transition
+    // Transition UI
     if (!isChatStarted) {
         isChatStarted = true;
-        saveSession(val || "Gambar");
         welcomeView.style.opacity = '0';
         setTimeout(() => { 
             welcomeView.style.display = 'none'; 
@@ -332,20 +330,17 @@
         }, 400);
     }
 
-    // User Bubble
+    // Tampilkan Bubble User
     const uB = document.createElement('div');
     uB.className = 'bubble user-bubble';
-    if (hasImg) uB.innerHTML = `<img src="${imagePreview.src}" style="width:100%;border-radius:10px;margin-bottom:5px;"><br>${val}`;
-    else uB.innerText = val;
+    uB.innerText = val;
     chatWindow.appendChild(uB);
 
-    // Reset Input
     input.value = '';
     input.style.height = 'auto';
-    innerPreview.style.display = 'none';
     forceScroll();
 
-    // AI Bubble Loading
+    // Tampilkan Bubble Loading AI
     const aB = document.createElement('div');
     aB.className = 'bubble ai-bubble';
     aB.innerHTML = `<div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
@@ -353,49 +348,67 @@
     forceScroll();
 
     try {
+        // Request ke backend DeepSeek lo
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: val })
         });
+
         const data = await response.json();
-        
-        aB.innerHTML = ''; // Clear loading
-        const results = data.results;
+        aB.innerHTML = ''; // Hapus loading
 
-        // --- CANVAS LOGIC (Jika ada Media/URL) ---
-        if (results.urls && results.urls.length > 0) {
-            const canvasNode = document.createElement('div');
-            canvasNode.style = "background: var(--card-bg); border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--accent-color);";
-            
-            results.urls.forEach(item => {
-                if (item.type === 'image') {
-                    const displaySrc = item.base64 || item.url;
-                    canvasNode.innerHTML += `
-                        <div style="margin-bottom: 10px;">
-                            <img src="${displaySrc}" style="width:100%; border-radius:8px; display:block; cursor:pointer;" onclick="window.open('${item.url}')">
-                            <p style="font-size:10px; opacity:0.6; margin-top:5px;">Source: Claila AI</p>
-                        </div>`;
-                } else {
-                    canvasNode.innerHTML += `
-                        <div style="padding: 8px; background: rgba(139,139,255,0.1); border-radius: 8px; margin-bottom: 5px;">
-                            <i class="fa-solid fa-link"></i> <a href="${item.url}" target="_blank" style="color:var(--accent-color); font-size:13px; text-decoration:none;">Buka Tautan</a>
-                        </div>`;
-                }
-            });
-            aB.appendChild(canvasNode);
-        }
-
-        // --- TEXT LOGIC ---
         const textCont = document.createElement('div');
         aB.appendChild(textCont);
-        typeAiResponse(textCont, results.message);
+
+        // Format Teks: Tebal, Spasi, dan Link Biru
+        const formattedText = formatAiResponse(data.response || data.text);
+        
+        // Jalankan efek mengetik
+        typeAiResponse(textCont, formattedText);
 
     } catch (error) {
-        aB.innerHTML = "Waduh, servernya lagi mogok kerja nih Sob.";
+        aB.innerHTML = "Waduh Sob, ada error di backend DeepSeek lo. Cek koneksi atau token.";
         console.error(error);
     }
 }
+
+// FUNGSI FORMATTING (TEBAL, SPASI, LINK)
+function formatAiResponse(text) {
+    if (!text) return "";
+
+    let formatted = text
+        // 1. Handle Link HTTPS -> Link Biru
+        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #60a5fa; text-decoration: underline;">Link</a>')
+        // 2. Handle Bold **Tebal**
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // 3. Handle Newline \n
+        .replace(/\n/g, '<br>');
+
+    return formatted;
+}
+
+// FUNGSI TYPING EFFECT (Disesuaikan untuk HTML)
+function typeAiResponse(element, htmlText) {
+    // Karena mengandung HTML, kita gunakan cara render bertahap atau langsung
+    // Untuk performa terbaik dengan formatting, kita langsung tampilkan atau 
+    // gunakan library markdown. Tapi ini versi simpel:
+    element.innerHTML = htmlText; 
+    forceScroll();
+    
+    // Tambahkan tombol salin setelah render
+    const cB = document.createElement('div');
+    cB.className = 'copy-btn';
+    cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin';
+    cB.onclick = () => {
+        const plainText = element.innerText;
+        navigator.clipboard.writeText(plainText);
+        cB.innerHTML = '<i class="fa-solid fa-check" style="color:#4ade80"></i> Tersalin!';
+        setTimeout(() => cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin', 2000);
+    };
+    element.parentElement.appendChild(cB);
+}
+
 
 
         sendBtn.onclick = sendMessage;
