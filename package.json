@@ -1,20 +1,15 @@
 {
   "name": "bagus-ai-api",
   "version": "1.0.0",
-  "description": "API Bagus Ai by Sugab Creative",
-  "main": "api/chat.js",
-  "dependencies": {
-    "axios": "^1.6.0",
-    "form-data": "^4.0.0",
-    "multer": "^1.4.5-lts.1"
-  },
-  "devDependencies": {
-    "@vercel/node": "^3.0.0"
-  },
+  "private": true,
+  "type": "commonjs",
   "scripts": {
+    "dev": "vercel dev",
     "start": "node api/chat.js"
   },
-  "engines": {
-    "node": "18.x"
+  "dependencies": {
+    "axios": "^1.6.7",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1"
   }
 }
