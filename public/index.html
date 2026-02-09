@@ -238,248 +238,246 @@
     </div>
 
     <script>
-        const input = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-btn');
-        const chatWindow = document.getElementById('chat-window');
-        const welcomeView = document.getElementById('welcome-view');
-        const appContainer = document.getElementById('app-container');
-        const bubbleWrap = document.getElementById('bubble-wrap');
-        const content = document.getElementById('content-ready');
-        const fileInput = document.getElementById('file-input');
-        const imagePreview = document.getElementById('image-preview');
-        const innerPreview = document.getElementById('inner-preview');
-        const historyList = document.getElementById('history-list');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay-bg');
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatWindow = document.getElementById('chat-window');
+    const welcomeView = document.getElementById('welcome-view');
+    const appContainer = document.getElementById('app-container');
+    const bubbleWrap = document.getElementById('bubble-wrap');
+    const content = document.getElementById('content-ready');
+    const fileInput = document.getElementById('file-input');
+    const imagePreview = document.getElementById('image-preview');
+    const innerPreview = document.getElementById('inner-preview');
+    const historyList = document.getElementById('history-list');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay-bg');
 
-        let isChatStarted = false;
-        let hasSavedSession = false;
+    // --- STATE MANAGEMENT ---
+    // Mengambil session terakhir dan riwayat chat dari LocalStorage
+    let currentSessionId = localStorage.getItem('bagus_ai_session') || null;
+    let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+    let isChatStarted = false;
 
-        function forceScroll() { appContainer.scrollTop = appContainer.scrollHeight; }
+    function forceScroll() { appContainer.scrollTop = appContainer.scrollHeight; }
 
-        // --- NEW SESSION LOGIC ---
-        document.getElementById('new-session-btn').onclick = () => {
-            isChatStarted = false; hasSavedSession = false;
-            chatWindow.innerHTML = ''; chatWindow.style.display = 'none';
-            welcomeView.style.display = 'flex'; welcomeView.style.opacity = '1';
-            welcomeView.style.transform = 'translateY(0)';
-            input.value = ''; input.style.height = 'auto';
-            bubbleWrap.classList.remove('hide');
-            forceScroll();
-        };
-
-        // --- SIDEBAR LOGIC (FIXED) ---
-        document.getElementById('burger-trigger').onclick = () => {
-            sidebar.classList.add('open');
-            overlay.style.display = 'block';
-            setTimeout(() => overlay.style.opacity = '1', 10);
-        };
-
-        overlay.onclick = () => {
-            sidebar.classList.remove('open');
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 300);
-        };
-
-        // --- SMART SAVE SESSION ---
-        function saveSession(text) {
-            if (hasSavedSession) return;
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            const shortText = text.length > 20 ? text.substring(0, 20) + '...' : text;
-            item.innerHTML = `<span>${shortText}</span><i class="fa-regular fa-trash-can trash-btn" style="color:#ff4d4d"></i>`;
-            historyList.prepend(item);
-            hasSavedSession = true;
-        }
-
-        // --- AI TYPING EFFECT ---
-        function typeAiResponse(element, text) {
-            let i = 0;
-            function typing() {
-                if (i < text.length) {
-                    element.innerHTML += text.charAt(i++);
-                    forceScroll();
-                    setTimeout(typing, 30);
-                } else {
-                    const cB = document.createElement('div');
-                    cB.className = 'copy-btn';
-                    cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin';
-                    cB.onclick = () => {
-                        navigator.clipboard.writeText(text);
-                        cB.innerHTML = '<i class="fa-solid fa-check" style="color:#4ade80"></i> Tersalin!';
-                        setTimeout(() => cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin', 2000);
-                    };
-                    element.parentElement.appendChild(cB);
-                }
-            }
-            typing();
-        }
-
-        // --- SEND LOGIC ---
-        async function sendMessage() {
-    const val = input.value.trim();
-    if (!val) return;
-
-    // Transition UI
-    if (!isChatStarted) {
-        isChatStarted = true;
-        welcomeView.style.opacity = '0';
-        setTimeout(() => { 
-            welcomeView.style.display = 'none'; 
-            chatWindow.style.display = 'flex'; 
-        }, 400);
-    }
-
-    // Tampilkan Bubble User
-    const uB = document.createElement('div');
-    uB.className = 'bubble user-bubble';
-    uB.innerText = val;
-    chatWindow.appendChild(uB);
-
-    input.value = '';
-    input.style.height = 'auto';
-    forceScroll();
-
-    // Tampilkan Bubble Loading AI
-    const aB = document.createElement('div');
-    aB.className = 'bubble ai-bubble';
-    aB.innerHTML = `<div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-    chatWindow.appendChild(aB);
-    forceScroll();
-
-    try {
-        // Request ke backend DeepSeek lo
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: val })
-        });
-
-        const data = await response.json();
-        aB.innerHTML = ''; // Hapus loading
-
-        const textCont = document.createElement('div');
-        aB.appendChild(textCont);
-
-        // Format Teks: Tebal, Spasi, dan Link Biru
-        const formattedText = formatAiResponse(data.response || data.text);
-        
-        // Jalankan efek mengetik
-        typeAiResponse(textCont, formattedText);
-
-    } catch (error) {
-        aB.innerHTML = "Waduh Sob, ada error di backend DeepSeek lo. Cek koneksi atau token.";
-        console.error(error);
-    }
-}
-
-// FUNGSI FORMATTING (TEBAL, SPASI, LINK)
-function formatAiResponse(text) {
-    if (!text) return "";
-
-    let formatted = text
-        // 1. Handle Link HTTPS -> Link Biru
-        .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #60a5fa; text-decoration: underline;">Link</a>')
-        // 2. Handle Bold **Tebal**
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // 3. Handle Newline \n
-        .replace(/\n/g, '<br>');
-
-    return formatted;
-}
-
-// FUNGSI TYPING EFFECT (Disesuaikan untuk HTML)
-function typeAiResponse(element, htmlText) {
-    // Karena mengandung HTML, kita gunakan cara render bertahap atau langsung
-    // Untuk performa terbaik dengan formatting, kita langsung tampilkan atau 
-    // gunakan library markdown. Tapi ini versi simpel:
-    element.innerHTML = htmlText; 
-    forceScroll();
-    
-    // Tambahkan tombol salin setelah render
-    const cB = document.createElement('div');
-    cB.className = 'copy-btn';
-    cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin';
-    cB.onclick = () => {
-        const plainText = element.innerText;
-        navigator.clipboard.writeText(plainText);
-        cB.innerHTML = '<i class="fa-solid fa-check" style="color:#4ade80"></i> Tersalin!';
-        setTimeout(() => cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin', 2000);
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        setTimeout(() => {
+            document.getElementById('preloader-overlay').style.display = 'none';
+            content.style.filter = 'blur(0px)';
+            type();
+            renderHistory(); // Render riwayat saat aplikasi dibuka
+        }, 1500);
     };
-    element.parentElement.appendChild(cB);
-}
 
+    // --- NEW SESSION LOGIC ---
+    document.getElementById('new-session-btn').onclick = () => {
+        isChatStarted = false;
+        currentSessionId = null; // Reset session ID untuk percakapan baru
+        localStorage.removeItem('bagus_ai_session');
+        chatWindow.innerHTML = ''; 
+        chatWindow.style.display = 'none';
+        welcomeView.style.display = 'flex'; 
+        welcomeView.style.opacity = '1';
+        welcomeView.style.transform = 'translateY(0)';
+        input.value = ''; 
+        input.style.height = 'auto';
+        bubbleWrap.classList.remove('hide');
+        forceScroll();
+    };
 
+    // --- SIDEBAR & HISTORY LOGIC ---
+    document.getElementById('burger-trigger').onclick = () => {
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+        setTimeout(() => overlay.style.opacity = '1', 10);
+    };
 
-        sendBtn.onclick = sendMessage;
+    overlay.onclick = () => {
+        sidebar.classList.remove('open');
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+    };
 
-        // --- VIEWPORT FIX (TOTAL LOCK) ---
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                const vv = window.visualViewport;
-                content.style.height = vv.height + "px";
-                content.style.top = vv.offsetTop + "px";
-                
-                const offset = window.innerHeight - vv.height;
-                if (offset > 150) {
-                    welcomeView.style.transform = "translateY(50px)";
-                    bubbleWrap.classList.add('hide');
-                } else {
-                    welcomeView.style.transform = "translateY(0)";
-                    if(!isChatStarted && input.value === "") bubbleWrap.classList.remove('hide');
-                }
-                window.scrollTo(0, 0);
-                if (isChatStarted) forceScroll();
+    function renderHistory() {
+        historyList.innerHTML = '';
+        chatHistory.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <span onclick="loadSession('${item.sessionId}')" style="cursor:pointer; flex:1;">${item.title}</span>
+                <i class="fa-regular fa-trash-can trash-btn" onclick="deleteHistory(event, ${index})"></i>
+            `;
+            historyList.appendChild(div);
+        });
+    }
+
+    function deleteHistory(event, index) {
+        event.stopPropagation();
+        chatHistory.splice(index, 1);
+        localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
+        renderHistory();
+    }
+
+    function loadSession(sid) {
+        currentSessionId = sid;
+        localStorage.setItem('bagus_ai_session', sid);
+        // Menutup sidebar setelah memilih riwayat
+        sidebar.classList.remove('open');
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+        // Opsional: Kamu bisa menambahkan logika fetch chat lama di sini jika backend mendukung
+    }
+
+    // --- FORMATTING LOGIC ---
+    function formatAiResponse(text) {
+        if (!text) return "";
+        return text
+            // Link HTTPS menjadi warna biru
+            .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: #60a5fa; text-decoration: underline;">Link</a>')
+            // Format Bold **Tebal**
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // Handle Newline \n menjadi spasi ke bawah
+            .replace(/\n/g, '<br>');
+    }
+
+    // --- AI TYPING & RESPONSE ---
+    function typeAiResponse(element, htmlText) {
+        // Menampilkan HTML secara langsung agar format link dan tebal tidak rusak
+        element.innerHTML = htmlText; 
+        forceScroll();
+        
+        const cB = document.createElement('div');
+        cB.className = 'copy-btn';
+        cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin';
+        cB.onclick = () => {
+            navigator.clipboard.writeText(element.innerText);
+            cB.innerHTML = '<i class="fa-solid fa-check" style="color:#4ade80"></i> Tersalin!';
+            setTimeout(() => cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin', 2000);
+        };
+        element.parentElement.appendChild(cB);
+    }
+
+    // --- SEND LOGIC ---
+    async function sendMessage() {
+        const val = input.value.trim();
+        if (!val) return;
+
+        if (!isChatStarted) {
+            isChatStarted = true;
+            welcomeView.style.opacity = '0';
+            setTimeout(() => { 
+                welcomeView.style.display = 'none'; 
+                chatWindow.style.display = 'flex'; 
+            }, 400);
+        }
+
+        const uB = document.createElement('div');
+        uB.className = 'bubble user-bubble';
+        uB.innerText = val;
+        chatWindow.appendChild(uB);
+
+        input.value = '';
+        input.style.height = 'auto';
+        forceScroll();
+
+        const aB = document.createElement('div');
+        aB.className = 'bubble ai-bubble';
+        aB.innerHTML = `<div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        chatWindow.appendChild(aB);
+        forceScroll();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: val,
+                    sessionId: currentSessionId // Mengirim session ID yang tersimpan
+                })
             });
-        }
 
-        // --- TYPEWRITER & THEME & OTHER ---
-        const phrases = ["Bagus!", "Sob!", "Kreator!"];
-        let pIdx = 0, cIdx = 0, isDel = false;
-        function type() {
-            const cur = phrases[pIdx];
-            const el = document.getElementById('typer');
-            if(el) {
-                el.innerText = isDel ? cur.substring(0, cIdx--) : cur.substring(0, cIdx++);
-                let speed = isDel ? 100 : 200;
-                if(!isDel && cIdx > cur.length) { isDel = true; speed = 2500; }
-                else if(isDel && cIdx < 0) { isDel = false; pIdx = (pIdx + 1) % phrases.length; speed = 500; }
-                setTimeout(type, speed);
+            const data = await response.json();
+            aB.innerHTML = ''; 
+
+            // Menyimpan sessionId baru dari respons Gemini ke LocalStorage
+            if (data.sessionId) {
+                currentSessionId = data.sessionId;
+                localStorage.setItem('bagus_ai_session', data.sessionId);
+
+                // Update riwayat jika sesi ini belum ada di daftar
+                if (!chatHistory.find(h => h.sessionId === data.sessionId)) {
+                    chatHistory.unshift({
+                        title: val.substring(0, 20) + (val.length > 20 ? '...' : ''),
+                        sessionId: data.sessionId
+                    });
+                    localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
+                    renderHistory();
+                }
             }
+
+            const textCont = document.createElement('div');
+            aB.appendChild(textCont);
+            typeAiResponse(textCont, formatAiResponse(data.response || data.text));
+
+        } catch (error) {
+            aB.innerHTML = "Waduh Sob, Bagus Ai lagi pusing. Coba lagi ya!";
+            console.error(error);
         }
+    }
 
-        const themeBtn = document.getElementById('theme-btn');
-        function applyTheme(t) {
-            document.documentElement.setAttribute('data-theme', t);
-            themeBtn.className = t === 'dark' ? 'fa-regular fa-moon theme-toggle' : 'fa-regular fa-sun theme-toggle';
+    sendBtn.onclick = sendMessage;
+
+    // --- VIEWPORT & UI HELPERS ---
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            const vv = window.visualViewport;
+            content.style.height = vv.height + "px";
+            content.style.top = vv.offsetTop + "px";
+            window.scrollTo(0, 0);
+            if (isChatStarted) forceScroll();
+        });
+    }
+
+    const phrases = ["Bagus!", "Sob!", "Kreator!"];
+    let pIdx = 0, cIdx = 0, isDel = false;
+    function type() {
+        const cur = phrases[pIdx];
+        const el = document.getElementById('typer');
+        if(el) {
+            el.innerText = isDel ? cur.substring(0, cIdx--) : cur.substring(0, cIdx++);
+            let speed = isDel ? 100 : 200;
+            if(!isDel && cIdx > cur.length) { isDel = true; speed = 2500; }
+            else if(isDel && cIdx < 0) { isDel = false; pIdx = (pIdx + 1) % phrases.length; speed = 500; }
+            setTimeout(type, speed);
         }
-        applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        themeBtn.onclick = () => {
-            const now = document.documentElement.getAttribute('data-theme');
-            applyTheme(now === 'dark' ? 'light' : 'dark');
-        };
+    }
 
-        document.getElementById('gallery-trigger').onclick = () => fileInput.click();
-        fileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => { imagePreview.src = ev.target.result; innerPreview.style.display = 'block'; forceScroll(); };
-                reader.readAsDataURL(file);
-            }
-        };
-        document.getElementById('remove-img').onclick = () => { fileInput.value = ''; innerPreview.style.display = 'none'; };
+    const themeBtn = document.getElementById('theme-btn');
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        themeBtn.className = t === 'dark' ? 'fa-regular fa-moon theme-toggle' : 'fa-regular fa-sun theme-toggle';
+    }
+    applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    themeBtn.onclick = () => {
+        const now = document.documentElement.getAttribute('data-theme');
+        applyTheme(now === 'dark' ? 'light' : 'dark');
+    };
 
-        input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+    document.getElementById('gallery-trigger').onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { imagePreview.src = ev.target.result; innerPreview.style.display = 'block'; forceScroll(); };
+            reader.readAsDataURL(file);
+        }
+    };
+    document.getElementById('remove-img').onclick = () => { fileInput.value = ''; innerPreview.style.display = 'none'; };
 
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('preloader-overlay').style.display = 'none';
-                content.style.filter = 'blur(0px)';
-                type();
-            }, 5000);
-        };
-        function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
-    </script>
+    input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+
+    function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
+</script>
 </body>
 </html>
