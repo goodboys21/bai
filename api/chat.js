@@ -82,20 +82,19 @@ app.post('/api/chat', async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     try {
-        const { message, sessionId } = req.body;
-        if (!message) return res.status(400).json({ error: 'Mau nanya apa nih Sob?' });
-
+        const { message, sessionId } = req.body; // Ambil sessionId dari frontend
+        
+        // Panggil fungsi geminiChat dengan sessionId yang dikirim
         const result = await geminiChat({ message, sessionId });
         
-        // Kirim response dalam format yang diinginkan frontend
         res.json({
             response: result.text,
-            sessionId: result.sessionId
+            sessionId: result.sessionId // Kirim sessionId baru ke frontend
         });
     } catch (err) {
-        console.error('Error:', err.message);
-        res.status(500).json({ error: 'Waduh Sob, Bagus Ai lagi pusing. Coba lagi ya!' });
+        res.status(500).json({ error: 'Gagal hubungi Bagus Ai' });
     }
 });
+
 
 module.exports = app;
