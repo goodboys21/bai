@@ -150,7 +150,7 @@
         .dot { width: 6px; height: 6px; background: var(--icon-color); border-radius: 50%; animation: dotPulse 1s infinite alternate; }
         @keyframes dotPulse { from { opacity: 0.4; } to { opacity: 1; } }
 
-        /* Style untuk gambar di chat bubble - Style WA */
+        /* Style untuk gambar di chat bubble */
         .chat-image-container {
             margin-top: 8px;
             position: relative;
@@ -174,7 +174,6 @@
             transform: scale(1.02);
         }
         
-        /* Style untuk pesan yang memiliki gambar */
         .message-with-image {
             display: flex;
             flex-direction: column;
@@ -185,7 +184,7 @@
             word-wrap: break-word;
         }
         
-        /* Style preview gambar di input (1:1) */
+        /* Preview gambar di input 1:1 */
         .image-preview-container {
             position: relative;
             width: 60px;
@@ -221,12 +220,6 @@
             z-index: 10;
         }
         
-        .remove-img-btn:hover {
-            background: #ff3333;
-            transform: scale(1.05);
-        }
-        
-        /* Preview area di input */
         .preview-area {
             display: flex;
             gap: 8px;
@@ -266,6 +259,20 @@
             max-height: 90%;
             object-fit: contain;
             border-radius: 8px;
+        }
+        
+        /* Loading indicator untuk upload */
+        .upload-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
         }
     </style>
 </head>
@@ -346,39 +353,63 @@
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay-bg');
     
-    // State untuk gambar yang akan dikirim
-    let pendingImage = null;
-    let pendingImageUrl = null;
-
-    // --- STATE MANAGEMENT ---
-    let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
-    let currentSessionId = localStorage.getItem('bagus_ai_session') || null;
+    // State
+    let currentSessionId = null;
     let isChatStarted = false;
+    let pendingImageFile = null;
+    let pendingImagePreview = null;
+    let isUploadingImage = false;
 
-    function forceScroll() { 
-        setTimeout(() => {
-            appContainer.scrollTop = appContainer.scrollHeight;
-        }, 100);
-    }
-
-    // --- INITIALIZATION ---
-    window.onload = async () => {
-        const pathId = window.location.pathname.split('/')[1]; 
+    // --- FUNGSI UPLOAD GAMBAR KE API TOURL ---
+    async function uploadImageToUrl(imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
         
-        if (pathId && pathId.length > 5) {
-            await loadSessionFromApi(pathId);
-        } else {
-            renderHistory();
+        try {
+            const response = await fetch('https://api.baguss.xyz/api/tools/tourl', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.status && result.result && result.result.url) {
+                return result.result.url;
+            } else {
+                throw new Error('Upload gagal: ' + JSON.stringify(result));
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
         }
-
-        setTimeout(() => {
-            document.getElementById('preloader-overlay').style.display = 'none';
-            content.style.filter = 'blur(0px)';
-            type();
-        }, 1500);
-    };
-
-    // --- NEW API LOAD FUNCTION ---
+    }
+    
+    // --- FUNGSI CREATE SESSION BARU ---
+    async function createNewSession() {
+        try {
+            const response = await fetch('https://bai-rho.vercel.app/v1/session/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.sessionId) {
+                currentSessionId = result.sessionId;
+                localStorage.setItem('bagus_ai_session', currentSessionId);
+                return currentSessionId;
+            } else {
+                throw new Error('Gagal membuat session');
+            }
+        } catch (error) {
+            console.error('Error creating session:', error);
+            throw error;
+        }
+    }
+    
+    // --- FUNGSI LOAD SESSION DARI API CHECK ---
     async function loadSessionFromApi(sessionId) {
         try {
             chatWindow.innerHTML = '<div class="bubble ai-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div style="margin-top: 5px; font-size: 12px;">Memuat percakapan...</div></div>';
@@ -413,6 +444,7 @@
             localStorage.setItem('bagus_ai_session', sessionId);
             window.history.pushState({}, '', `/${sessionId}`);
             
+            // Simpan ke history lokal
             let localHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
             if (!localHistory.find(h => h.sessionId === sessionId) && messages.length > 0) {
                 const firstUserMsg = messages.find(m => m.role === 'user');
@@ -426,6 +458,7 @@
             }
             renderHistory();
             
+            // Render semua pesan
             for (let i = 0; i < messages.length; i++) {
                 const msg = messages[i];
                 const bubble = document.createElement('div');
@@ -435,22 +468,14 @@
                 messageDiv.className = 'message-with-image';
                 
                 if (msg.role === 'assistant' || msg.role === 'bot' || msg.role === 'ai') {
-                    let displayText = msg.text || '';
-                    if (displayText) {
+                    if (msg.text) {
                         const textSpan = document.createElement('div');
                         textSpan.className = 'message-text';
-                        textSpan.innerHTML = formatAiResponse(displayText);
+                        textSpan.innerHTML = formatAiResponse(msg.text);
                         messageDiv.appendChild(textSpan);
                     }
                     if (msg.image) {
-                        const imgContainer = document.createElement('div');
-                        imgContainer.className = 'chat-image-container';
-                        imgContainer.onclick = () => openImageModal(msg.image);
-                        const img = document.createElement('img');
-                        img.className = 'chat-image';
-                        img.src = msg.image;
-                        img.alt = 'Gambar';
-                        imgContainer.appendChild(img);
+                        const imgContainer = createImageContainer(msg.image);
                         messageDiv.appendChild(imgContainer);
                     }
                     bubble.appendChild(messageDiv);
@@ -464,14 +489,7 @@
                         messageDiv.appendChild(textSpan);
                     }
                     if (msg.image) {
-                        const imgContainer = document.createElement('div');
-                        imgContainer.className = 'chat-image-container';
-                        imgContainer.onclick = () => openImageModal(msg.image);
-                        const img = document.createElement('img');
-                        img.className = 'chat-image';
-                        img.src = msg.image;
-                        img.alt = 'Gambar';
-                        imgContainer.appendChild(img);
+                        const imgContainer = createImageContainer(msg.image);
                         messageDiv.appendChild(imgContainer);
                     }
                     bubble.appendChild(messageDiv);
@@ -479,7 +497,7 @@
                 }
                 
                 forceScroll();
-                if (msg.role === 'assistant') await delay(100);
+                await delay(100);
             }
             
             forceScroll();
@@ -490,25 +508,28 @@
         }
     }
     
-    // Helper function untuk escape HTML
+    function createImageContainer(imageUrl) {
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'chat-image-container';
+        imgContainer.onclick = () => openImageModal(imageUrl);
+        const img = document.createElement('img');
+        img.className = 'chat-image';
+        img.src = imageUrl;
+        img.alt = 'Gambar';
+        imgContainer.appendChild(img);
+        return imgContainer;
+    }
+    
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
     
-    async function typeMessageWithDelay(element, htmlText, isLast = true) {
-        element.innerHTML = htmlText;
-        addCopyBtn(element.parentElement);
-        forceScroll();
-        return new Promise(resolve => setTimeout(resolve, isLast ? 200 : 50));
-    }
-    
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
     
-    // Fungsi untuk membuka modal gambar
     function openImageModal(imageUrl) {
         const modal = document.getElementById('imageModal');
         const modalImg = document.getElementById('modalImage');
@@ -519,17 +540,53 @@
     function closeModal() {
         document.getElementById('imageModal').style.display = 'none';
     }
+    
+    function forceScroll() { 
+        setTimeout(() => {
+            appContainer.scrollTop = appContainer.scrollHeight;
+        }, 100);
+    }
+    
+    // --- INITIALIZATION ---
+    window.onload = async () => {
+        const pathId = window.location.pathname.split('/')[1];
+        
+        if (pathId && pathId.length > 5) {
+            // Ada session ID di URL, langsung load
+            await loadSessionFromApi(pathId);
+        } else {
+            // Halaman utama, buat session baru
+            try {
+                await createNewSession();
+                renderHistory();
+            } catch (error) {
+                console.error('Gagal membuat session:', error);
+            }
+        }
 
+        setTimeout(() => {
+            document.getElementById('preloader-overlay').style.display = 'none';
+            content.style.filter = 'blur(0px)';
+            type();
+        }, 1500);
+    };
+    
     // --- NEW SESSION LOGIC ---
-    document.getElementById('new-session-btn').onclick = () => {
+    document.getElementById('new-session-btn').onclick = async () => {
         isChatStarted = false;
-        currentSessionId = null;
-        pendingImage = null;
-        pendingImageUrl = null;
+        pendingImageFile = null;
+        pendingImagePreview = null;
         innerPreview.innerHTML = '';
         innerPreview.style.display = 'none';
         fileInput.value = '';
-        localStorage.removeItem('bagus_ai_session');
+        
+        // Buat session baru
+        try {
+            await createNewSession();
+        } catch (error) {
+            console.error('Gagal buat session baru:', error);
+        }
+        
         window.history.pushState({}, '', '/');
         chatWindow.innerHTML = ''; 
         chatWindow.style.display = 'none';
@@ -541,23 +598,23 @@
         bubbleWrap.classList.remove('hide');
         forceScroll();
     };
-
-    // --- SIDEBAR & HISTORY LOGIC ---
+    
+    // --- SIDEBAR & HISTORY ---
     document.getElementById('burger-trigger').onclick = () => {
         sidebar.classList.add('open');
         overlay.style.display = 'block';
         setTimeout(() => overlay.style.opacity = '1', 10);
     };
-
+    
     overlay.onclick = () => {
         sidebar.classList.remove('open');
         overlay.style.opacity = '0';
         setTimeout(() => overlay.style.display = 'none', 300);
     };
-
+    
     function renderHistory() {
         historyList.innerHTML = '';
-        chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+        let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
         if (chatHistory.length === 0) {
             historyList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--icon-color); font-size: 12px;">Belum ada riwayat chat</div>';
             return;
@@ -572,19 +629,20 @@
             historyList.appendChild(div);
         });
     }
-
+    
     function deleteHistory(event, index) {
         event.stopPropagation();
+        let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
         chatHistory.splice(index, 1);
         localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
         renderHistory();
     }
-
+    
     function loadSession(sid) {
         window.location.href = `/${sid}`;
     }
-
-    // --- FORMATTING LOGIC ---
+    
+    // --- FORMATTING ---
     function formatAiResponse(text) {
         if (!text) return "";
         return text
@@ -593,7 +651,7 @@
             .replace(/\*/g, '•')
             .replace(/\n/g, '<br>');
     }
-
+    
     function addCopyBtn(bubbleElement) {
         if (bubbleElement.querySelector('.copy-btn')) return;
         const textElement = bubbleElement.querySelector('.message-text');
@@ -610,14 +668,18 @@
         };
         bubbleElement.appendChild(cB);
     }
-
-    // --- SEND LOGIC WITH IMAGE ---
+    
+    // --- SEND MESSAGE KE API CHAT ---
     async function sendMessage() {
         const val = input.value.trim();
-        const hasImage = pendingImage !== null;
+        const hasImage = pendingImageFile !== null;
         
         if (!val && !hasImage) return;
-
+        if (!currentSessionId) {
+            console.error('Session ID tidak ada');
+            return;
+        }
+        
         if (!isChatStarted) {
             isChatStarted = true;
             welcomeView.style.opacity = '0';
@@ -626,11 +688,10 @@
                 chatWindow.style.display = 'flex'; 
             }, 400);
         }
-
-        // Buat bubble user dengan gambar preview 1:1
+        
+        // Tampilkan bubble user dengan preview gambar
         const uB = document.createElement('div');
         uB.className = 'bubble user-bubble';
-        
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message-with-image';
         
@@ -641,13 +702,13 @@
             messageDiv.appendChild(textSpan);
         }
         
-        if (hasImage) {
+        if (pendingImagePreview) {
             const imgContainer = document.createElement('div');
             imgContainer.className = 'chat-image-container';
-            imgContainer.onclick = () => openImageModal(pendingImage);
+            imgContainer.onclick = () => openImageModal(pendingImagePreview);
             const img = document.createElement('img');
             img.className = 'chat-image';
-            img.src = pendingImage;
+            img.src = pendingImagePreview;
             img.alt = 'Gambar';
             imgContainer.appendChild(img);
             messageDiv.appendChild(imgContainer);
@@ -656,163 +717,72 @@
         uB.appendChild(messageDiv);
         chatWindow.appendChild(uB);
         
-        // Simpan data untuk dikirim
-        const imageToSend = pendingImage;
+        // Simpan data
         const textToSend = val;
+        const imageFileToSend = pendingImageFile;
         
         // Reset input
         input.value = '';
         input.style.height = 'auto';
-        pendingImage = null;
-        pendingImageUrl = null;
+        pendingImageFile = null;
+        pendingImagePreview = null;
         innerPreview.innerHTML = '';
         innerPreview.style.display = 'none';
         fileInput.value = '';
         forceScroll();
-
+        
         // Tampilkan loading AI
         const aB = document.createElement('div');
         aB.className = 'bubble ai-bubble';
         aB.innerHTML = `<div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
         chatWindow.appendChild(aB);
         forceScroll();
-
+        
         try {
-            const response = await fetch('/api/chat', {
+            let imageUrl = null;
+            
+            // Upload gambar jika ada
+            if (imageFileToSend) {
+                imageUrl = await uploadImageToUrl(imageFileToSend);
+            }
+            
+            // Kirim ke API chat
+            const payload = {
+                sessionId: currentSessionId,
+                message: textToSend || ''
+            };
+            
+            if (imageUrl) {
+                payload.image = imageUrl;
+            }
+            
+            const response = await fetch('https://bai-rho.vercel.app/v1/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    message: textToSend, 
-                    image: imageToSend,
-                    sessionId: currentSessionId 
-                })
+                body: JSON.stringify(payload)
             });
-
-            const data = await response.json();
-            aB.innerHTML = ''; 
-            const aiResponse = data.response || data.text;
             
-            if (data.sessionId) {
-                let fileId = data.sessionId;
-                try {
-                    const decoded = JSON.parse(atob(data.sessionId));
-                    fileId = decoded.resumeArray?.[0] || Date.now();
-                } catch(e) {
-                    fileId = data.sessionId;
-                }
-                
-                currentSessionId = data.sessionId;
-                localStorage.setItem('bagus_ai_session', data.sessionId);
-                window.history.pushState({}, '', `/${fileId}`);
-                
-                let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
-                if (!history.find(h => h.sessionId === fileId)) {
-                    const title = textToSend ? textToSend.substring(0, 20) + (textToSend.length > 20 ? '...' : '') : 'Gambar';
-                    history.unshift({ title: title, sessionId: fileId });
-                    localStorage.setItem('bagus_ai_history', JSON.stringify(history));
-                    renderHistory();
-                }
-            }
-
+            const data = await response.json();
+            aB.innerHTML = '';
+            
             const aiMessageDiv = document.createElement('div');
             aiMessageDiv.className = 'message-with-image';
             const textSpan = document.createElement('div');
             textSpan.className = 'message-text';
-            textSpan.innerHTML = formatAiResponse(aiResponse);
+            textSpan.innerHTML = formatAiResponse(data.response);
             aiMessageDiv.appendChild(textSpan);
             aB.appendChild(aiMessageDiv);
             addCopyBtn(aB);
+            
+            // Simpan ke history lokal
+            let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+            if (!history.find(h => h.sessionId === currentSessionId)) {
+                const title = textToSend ? textToSend.substring(0, 20) + (textToSend.length > 20 ? '...' : '') : 'Gambar';
+                history.unshift({ title: title, sessionId: currentSessionId });
+                localStorage.setItem('bagus_ai_history', JSON.stringify(history));
+                renderHistory();
+            }
+            
             forceScroll();
-
+            
         } catch (error) {
-            console.error('Send error:', error);
-            aB.innerHTML = "⚠️ Waduh Sob, Bagus Ai lagi pusing. Coba ulangi sebentar ya!";
-        }
-    }
-
-    sendBtn.onclick = sendMessage;
-    
-    // Enter to send
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // --- UI HELPERS ---
-    const phrases = ["Bagus!", "Sob!", "Kreator!"];
-    let pIdx = 0, cIdx = 0, isDel = false;
-    function type() {
-        const cur = phrases[pIdx];
-        const el = document.getElementById('typer');
-        if(el) {
-            el.innerText = isDel ? cur.substring(0, cIdx--) : cur.substring(0, cIdx++);
-            let speed = isDel ? 100 : 200;
-            if(!isDel && cIdx > cur.length) { isDel = true; speed = 2500; }
-            else if(isDel && cIdx < 0) { isDel = false; pIdx = (pIdx + 1) % phrases.length; speed = 500; }
-            setTimeout(type, speed);
-        }
-    }
-
-    const themeBtn = document.getElementById('theme-btn');
-    function applyTheme(t) {
-        document.documentElement.setAttribute('data-theme', t);
-        themeBtn.className = t === 'dark' ? 'fa-regular fa-moon theme-toggle' : 'fa-regular fa-sun theme-toggle';
-    }
-    applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    themeBtn.onclick = () => {
-        const now = document.documentElement.getAttribute('data-theme');
-        applyTheme(now === 'dark' ? 'light' : 'dark');
-    };
-
-    // Image handling dengan preview 1:1
-    document.getElementById('gallery-trigger').onclick = () => fileInput.click();
-    fileInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => { 
-                pendingImage = ev.target.result;
-                
-                // Buat preview 1:1
-                const previewContainer = document.createElement('div');
-                previewContainer.className = 'image-preview-container';
-                const img = document.createElement('img');
-                img.src = ev.target.result;
-                img.alt = 'Preview';
-                const removeBtn = document.createElement('div');
-                removeBtn.className = 'remove-img-btn';
-                removeBtn.innerHTML = '×';
-                removeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    pendingImage = null;
-                    innerPreview.innerHTML = '';
-                    innerPreview.style.display = 'none';
-                    fileInput.value = '';
-                };
-                previewContainer.appendChild(img);
-                previewContainer.appendChild(removeBtn);
-                
-                innerPreview.innerHTML = '';
-                innerPreview.appendChild(previewContainer);
-                innerPreview.style.display = 'block';
-                forceScroll();
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-    
-    input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
-
-    function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
-    
-    // Expose functions to global scope
-    window.loadSession = loadSession;
-    window.deleteHistory = deleteHistory;
-    window.fillInput = fillInput;
-    window.openImageModal = openImageModal;
-    window.closeModal = closeModal;
-</script>
-</body>
-</html>
