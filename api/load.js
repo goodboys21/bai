@@ -16,7 +16,7 @@ async function getGithubConfig() {
 }
 
 // --- ENDPOINT: LOAD HISTORY ---
-app.post('/v1/load', async (req, res) => {
+app.post('/v1/session/check', async (req, res) => {
     // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
