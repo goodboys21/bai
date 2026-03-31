@@ -121,8 +121,38 @@
         .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer; color: var(--text-color); font-size: 14px; margin-bottom: 4px; }
         .menu-item.active { background: rgba(139, 139, 255, 0.15); color: var(--accent-color); font-weight: 500; }
         .history-list { flex: 1; overflow-y: auto; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; font-size: 14px; }
-        .trash-btn { color: #ff4d4d !important; cursor: pointer; padding: 5px; }
+        .history-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px; 
+            margin-bottom: 8px; 
+            border-radius: 10px; 
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background: rgba(139, 139, 255, 0.1);
+        }
+        .history-item.active {
+            background: rgba(139, 139, 255, 0.2);
+            border-left: 3px solid var(--accent-color);
+        }
+        .history-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .trash-btn { 
+            color: #ff4d4d !important; 
+            cursor: pointer; 
+            padding: 5px;
+            opacity: 0.6;
+        }
+        .trash-btn:hover {
+            opacity: 1;
+        }
 
         #app-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px; display: flex; flex-direction: column; position: relative; }
         
@@ -150,7 +180,6 @@
         .dot { width: 6px; height: 6px; background: var(--icon-color); border-radius: 50%; animation: dotPulse 1s infinite alternate; }
         @keyframes dotPulse { from { opacity: 0.4; } to { opacity: 1; } }
 
-        /* Style untuk gambar di chat bubble */
         .chat-image-container {
             margin-top: 8px;
             position: relative;
@@ -184,16 +213,17 @@
             word-wrap: break-word;
         }
         
-        /* Preview gambar di input 1:1 */
+        /* Preview gambar di input - FIXED */
         .image-preview-container {
             position: relative;
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 12px;
             overflow: hidden;
             background: var(--card-bg);
             margin-bottom: 8px;
             display: inline-block;
+            border: 2px solid var(--accent-color);
         }
         
         .image-preview-container img {
@@ -204,20 +234,28 @@
         
         .remove-img-btn {
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -10px;
+            right: -10px;
             background: #ff4d4d;
             color: white;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
+            width: 26px;
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
             border: 2px solid var(--bg-color);
             z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        
+        .remove-img-btn:hover {
+            transform: scale(1.1);
+            background: #ff3333;
         }
         
         .preview-area {
@@ -225,6 +263,7 @@
             gap: 8px;
             margin-bottom: 8px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
@@ -240,7 +279,6 @@
         .icon-btn { color: var(--icon-color); cursor: pointer; font-size: 18px; margin-bottom: 10px; }
         #inner-preview { display: none; }
         
-        /* Modal untuk preview gambar */
         .image-modal {
             display: none;
             position: fixed;
@@ -260,20 +298,6 @@
             object-fit: contain;
             border-radius: 8px;
         }
-        
-        /* Loading indicator untuk upload */
-        .upload-loading {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-        }
     </style>
 </head>
 <body>
@@ -288,12 +312,18 @@
                 <span style="font-weight: 700; font-size: 18px;">Bagus Ai<span style="color:var(--accent-color);">.</span></span>
             </div>
             <p class="menu-label">Platform</p>
-            <div class="menu-item active"><i class="fa-regular fa-comment-dots"></i> Chat AI</div>
-            <div class="menu-item"><i class="fa-solid fa-wand-magic-sparkles"></i> Create Image</div>
-            <div class="menu-item"><i class="fa-solid fa-paintbrush"></i> Edit Image</div>
+            <div class="menu-item" data-page="chat">
+                <i class="fa-regular fa-comment-dots"></i> Chat AI
+            </div>
+            <div class="menu-item" data-page="create">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Create Image
+            </div>
+            <div class="menu-item" data-page="edit">
+                <i class="fa-solid fa-paintbrush"></i> Edit Image
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
                 <p class="menu-label" style="margin: 0;">History</p>
-                <i class="fa-solid fa-plus" style="color:var(--accent-color); cursor:pointer;"></i>
+                <i class="fa-solid fa-plus" style="color:var(--accent-color); cursor:pointer;" id="new-history-btn"></i>
             </div>
             <div class="history-list" id="history-list"></div>
         </div>
@@ -334,7 +364,6 @@
         </footer>
     </div>
     
-    <!-- Modal untuk preview gambar -->
     <div id="imageModal" class="image-modal" onclick="closeModal()">
         <img id="modalImage" src="">
     </div>
@@ -353,14 +382,12 @@
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay-bg');
     
-    // State
     let currentSessionId = null;
     let isChatStarted = false;
     let pendingImageFile = null;
     let pendingImagePreview = null;
-    let isUploadingImage = false;
 
-    // --- FUNGSI UPLOAD GAMBAR KE API TOURL ---
+    // Fungsi upload gambar ke API
     async function uploadImageToUrl(imageFile) {
         const formData = new FormData();
         formData.append('file', imageFile);
@@ -370,13 +397,11 @@
                 method: 'POST',
                 body: formData
             });
-            
             const result = await response.json();
-            
             if (result.status && result.result && result.result.url) {
                 return result.result.url;
             } else {
-                throw new Error('Upload gagal: ' + JSON.stringify(result));
+                throw new Error('Upload gagal');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
@@ -384,22 +409,16 @@
         }
     }
     
-    // --- FUNGSI CREATE SESSION BARU ---
+    // Fungsi create session baru
     async function createNewSession() {
         try {
             const response = await fetch('https://bai-rho.vercel.app/v1/session/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
-            
             const result = await response.json();
-            
             if (result.success && result.sessionId) {
-                currentSessionId = result.sessionId;
-                localStorage.setItem('bagus_ai_session', currentSessionId);
-                return currentSessionId;
+                return result.sessionId;
             } else {
                 throw new Error('Gagal membuat session');
             }
@@ -409,7 +428,7 @@
         }
     }
     
-    // --- FUNGSI LOAD SESSION DARI API CHECK ---
+    // Fungsi load session dari API
     async function loadSessionFromApi(sessionId) {
         try {
             chatWindow.innerHTML = '<div class="bubble ai-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div style="margin-top: 5px; font-size: 12px;">Memuat percakapan...</div></div>';
@@ -419,51 +438,33 @@
 
             const response = await fetch('https://bai-rho.vercel.app/v1/session/check', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sessionId: sessionId })
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: Gagal memuat sesi`);
-            }
-
+            if (!response.ok) throw new Error('Gagal memuat sesi');
             const result = await response.json();
             
             if (!result.success || !result.data || !result.data.history) {
                 throw new Error('Data sesi tidak valid');
             }
 
-            const sessionData = result.data;
-            const messages = sessionData.history;
-            
+            const messages = result.data.history;
             chatWindow.innerHTML = '';
             
             currentSessionId = sessionId;
-            localStorage.setItem('bagus_ai_session', sessionId);
-            window.history.pushState({}, '', `/${sessionId}`);
+            localStorage.setItem('bagus_ai_session', currentSessionId);
             
-            // Simpan ke history lokal
-            let localHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
-            if (!localHistory.find(h => h.sessionId === sessionId) && messages.length > 0) {
-                const firstUserMsg = messages.find(m => m.role === 'user');
-                const title = firstUserMsg ? firstUserMsg.text.substring(0, 25) + (firstUserMsg.text.length > 25 ? '...' : '') : "Percakapan Lama";
-                localHistory.unshift({ 
-                    title: title, 
-                    sessionId: sessionId,
-                    timestamp: sessionData.createdAt || new Date().toISOString()
-                });
-                localStorage.setItem('bagus_ai_history', JSON.stringify(localHistory));
-            }
+            // Update history lokal
+            updateLocalHistory(sessionId, messages);
             renderHistory();
+            highlightActiveSession(sessionId);
             
             // Render semua pesan
             for (let i = 0; i < messages.length; i++) {
                 const msg = messages[i];
                 const bubble = document.createElement('div');
                 bubble.className = `bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
-                
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'message-with-image';
                 
@@ -475,8 +476,7 @@
                         messageDiv.appendChild(textSpan);
                     }
                     if (msg.image) {
-                        const imgContainer = createImageContainer(msg.image);
-                        messageDiv.appendChild(imgContainer);
+                        messageDiv.appendChild(createImageContainer(msg.image));
                     }
                     bubble.appendChild(messageDiv);
                     chatWindow.appendChild(bubble);
@@ -489,22 +489,30 @@
                         messageDiv.appendChild(textSpan);
                     }
                     if (msg.image) {
-                        const imgContainer = createImageContainer(msg.image);
-                        messageDiv.appendChild(imgContainer);
+                        messageDiv.appendChild(createImageContainer(msg.image));
                     }
                     bubble.appendChild(messageDiv);
                     chatWindow.appendChild(bubble);
                 }
-                
                 forceScroll();
                 await delay(100);
             }
-            
             forceScroll();
-            
         } catch (error) {
             console.error('Error loading session:', error);
-            chatWindow.innerHTML = `<div class="bubble ai-bubble">❌ Gagal memuat percakapan: ${error.message}<br><br>Pastikan session ID valid dan coba lagi.</div>`;
+            chatWindow.innerHTML = `<div class="bubble ai-bubble">❌ Gagal memuat percakapan: ${error.message}</div>`;
+        }
+    }
+    
+    function updateLocalHistory(sessionId, messages) {
+        let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+        const existingIndex = history.findIndex(h => h.sessionId === sessionId);
+        
+        if (existingIndex === -1 && messages.length > 0) {
+            const firstUserMsg = messages.find(m => m.role === 'user');
+            const title = firstUserMsg ? firstUserMsg.text.substring(0, 25) + (firstUserMsg.text.length > 25 ? '...' : '') : "Percakapan Baru";
+            history.unshift({ title: title, sessionId: sessionId, timestamp: new Date().toISOString() });
+            localStorage.setItem('bagus_ai_history', JSON.stringify(history));
         }
     }
     
@@ -518,6 +526,65 @@
         img.alt = 'Gambar';
         imgContainer.appendChild(img);
         return imgContainer;
+    }
+    
+    function highlightActiveSession(sessionId) {
+        document.querySelectorAll('.history-item').forEach(item => {
+            if (item.dataset.sessionId === sessionId) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+    
+    function renderHistory() {
+        historyList.innerHTML = '';
+        let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+        if (history.length === 0) {
+            historyList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--icon-color); font-size: 12px;">Belum ada riwayat chat</div>';
+            return;
+        }
+        history.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            if (currentSessionId === item.sessionId) div.classList.add('active');
+            div.dataset.sessionId = item.sessionId;
+            div.innerHTML = `
+                <span class="history-title" onclick="loadSession('${item.sessionId}')">${escapeHtml(item.title)}</span>
+                <i class="fa-regular fa-trash-can trash-btn" onclick="deleteHistory(event, '${item.sessionId}', ${index})"></i>
+            `;
+            historyList.appendChild(div);
+        });
+    }
+    
+    function deleteHistory(event, sessionId, index) {
+        event.stopPropagation();
+        let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
+        history.splice(index, 1);
+        localStorage.setItem('bagus_ai_history', JSON.stringify(history));
+        
+        if (currentSessionId === sessionId) {
+            // Jika menghapus session yang sedang aktif, buat session baru dan redirect
+            createNewSessionAndRedirect();
+        } else {
+            renderHistory();
+        }
+    }
+    
+    async function createNewSessionAndRedirect() {
+        try {
+            const newSessionId = await createNewSession();
+            window.location.href = `/${newSessionId}`;
+        } catch (error) {
+            console.error('Gagal buat session baru:', error);
+        }
+    }
+    
+    function loadSession(sid) {
+        if (sid !== currentSessionId) {
+            window.location.href = `/${sid}`;
+        }
     }
     
     function escapeHtml(text) {
@@ -547,23 +614,33 @@
         }, 100);
     }
     
-    // --- INITIALIZATION ---
+    // INITIALIZATION
     window.onload = async () => {
         const pathId = window.location.pathname.split('/')[1];
         
         if (pathId && pathId.length > 5) {
             // Ada session ID di URL, langsung load
+            currentSessionId = pathId;
             await loadSessionFromApi(pathId);
         } else {
-            // Halaman utama, buat session baru
+            // Halaman utama, buat session baru dan redirect
             try {
-                await createNewSession();
-                renderHistory();
+                const newSessionId = await createNewSession();
+                window.location.href = `/${newSessionId}`;
+                return;
             } catch (error) {
                 console.error('Gagal membuat session:', error);
             }
         }
-
+        
+        // Aktifkan menu Chat AI
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.page === 'chat') {
+                item.classList.add('active');
+            }
+        });
+        
         setTimeout(() => {
             document.getElementById('preloader-overlay').style.display = 'none';
             content.style.filter = 'blur(0px)';
@@ -571,35 +648,16 @@
         }, 1500);
     };
     
-    // --- NEW SESSION LOGIC ---
+    // NEW SESSION
     document.getElementById('new-session-btn').onclick = async () => {
-        isChatStarted = false;
-        pendingImageFile = null;
-        pendingImagePreview = null;
-        innerPreview.innerHTML = '';
-        innerPreview.style.display = 'none';
-        fileInput.value = '';
-        
-        // Buat session baru
-        try {
-            await createNewSession();
-        } catch (error) {
-            console.error('Gagal buat session baru:', error);
-        }
-        
-        window.history.pushState({}, '', '/');
-        chatWindow.innerHTML = ''; 
-        chatWindow.style.display = 'none';
-        welcomeView.style.display = 'flex'; 
-        welcomeView.style.opacity = '1';
-        welcomeView.style.transform = 'translateY(0)';
-        input.value = ''; 
-        input.style.height = 'auto';
-        bubbleWrap.classList.remove('hide');
-        forceScroll();
+        createNewSessionAndRedirect();
     };
     
-    // --- SIDEBAR & HISTORY ---
+    document.getElementById('new-history-btn').onclick = async () => {
+        createNewSessionAndRedirect();
+    };
+    
+    // SIDEBAR
     document.getElementById('burger-trigger').onclick = () => {
         sidebar.classList.add('open');
         overlay.style.display = 'block';
@@ -612,37 +670,7 @@
         setTimeout(() => overlay.style.display = 'none', 300);
     };
     
-    function renderHistory() {
-        historyList.innerHTML = '';
-        let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
-        if (chatHistory.length === 0) {
-            historyList.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--icon-color); font-size: 12px;">Belum ada riwayat chat</div>';
-            return;
-        }
-        chatHistory.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `
-                <span onclick="loadSession('${item.sessionId}')" style="cursor:pointer; flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.title)}</span>
-                <i class="fa-regular fa-trash-can trash-btn" onclick="deleteHistory(event, ${index})"></i>
-            `;
-            historyList.appendChild(div);
-        });
-    }
-    
-    function deleteHistory(event, index) {
-        event.stopPropagation();
-        let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
-        chatHistory.splice(index, 1);
-        localStorage.setItem('bagus_ai_history', JSON.stringify(chatHistory));
-        renderHistory();
-    }
-    
-    function loadSession(sid) {
-        window.location.href = `/${sid}`;
-    }
-    
-    // --- FORMATTING ---
+    // FORMATTING
     function formatAiResponse(text) {
         if (!text) return "";
         return text
@@ -669,16 +697,13 @@
         bubbleElement.appendChild(cB);
     }
     
-    // --- SEND MESSAGE KE API CHAT ---
+    // SEND MESSAGE
     async function sendMessage() {
         const val = input.value.trim();
         const hasImage = pendingImageFile !== null;
         
         if (!val && !hasImage) return;
-        if (!currentSessionId) {
-            console.error('Session ID tidak ada');
-            return;
-        }
+        if (!currentSessionId) return;
         
         if (!isChatStarted) {
             isChatStarted = true;
@@ -689,7 +714,7 @@
             }, 400);
         }
         
-        // Tampilkan bubble user dengan preview gambar
+        // Bubble user
         const uB = document.createElement('div');
         uB.className = 'bubble user-bubble';
         const messageDiv = document.createElement('div');
@@ -703,25 +728,17 @@
         }
         
         if (pendingImagePreview) {
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'chat-image-container';
-            imgContainer.onclick = () => openImageModal(pendingImagePreview);
-            const img = document.createElement('img');
-            img.className = 'chat-image';
-            img.src = pendingImagePreview;
-            img.alt = 'Gambar';
-            imgContainer.appendChild(img);
-            messageDiv.appendChild(imgContainer);
+            messageDiv.appendChild(createImageContainer(pendingImagePreview));
         }
         
         uB.appendChild(messageDiv);
         chatWindow.appendChild(uB);
         
-        // Simpan data
         const textToSend = val;
         const imageFileToSend = pendingImageFile;
+        const imagePreviewToKeep = pendingImagePreview;
         
-        // Reset input
+        // Reset
         input.value = '';
         input.style.height = 'auto';
         pendingImageFile = null;
@@ -731,7 +748,7 @@
         fileInput.value = '';
         forceScroll();
         
-        // Tampilkan loading AI
+        // Loading AI
         const aB = document.createElement('div');
         aB.className = 'bubble ai-bubble';
         aB.innerHTML = `<div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
@@ -740,21 +757,12 @@
         
         try {
             let imageUrl = null;
-            
-            // Upload gambar jika ada
             if (imageFileToSend) {
                 imageUrl = await uploadImageToUrl(imageFileToSend);
             }
             
-            // Kirim ke API chat
-            const payload = {
-                sessionId: currentSessionId,
-                message: textToSend || ''
-            };
-            
-            if (imageUrl) {
-                payload.image = imageUrl;
-            }
+            const payload = { sessionId: currentSessionId, message: textToSend || '' };
+            if (imageUrl) payload.image = imageUrl;
             
             const response = await fetch('https://bai-rho.vercel.app/v1/chat', {
                 method: 'POST',
@@ -774,17 +782,16 @@
             aB.appendChild(aiMessageDiv);
             addCopyBtn(aB);
             
-            // Simpan ke history lokal
+            // Update history
             let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
             if (!history.find(h => h.sessionId === currentSessionId)) {
                 const title = textToSend ? textToSend.substring(0, 20) + (textToSend.length > 20 ? '...' : '') : 'Gambar';
-                history.unshift({ title: title, sessionId: currentSessionId });
+                history.unshift({ title: title, sessionId: currentSessionId, timestamp: new Date().toISOString() });
                 localStorage.setItem('bagus_ai_history', JSON.stringify(history));
                 renderHistory();
             }
-            
+            highlightActiveSession(currentSessionId);
             forceScroll();
-            
         } catch (error) {
             console.error('Send error:', error);
             aB.innerHTML = "⚠️ Waduh Sob, Bagus Ai lagi pusing. Coba ulangi sebentar ya!";
@@ -793,7 +800,6 @@
     
     sendBtn.onclick = sendMessage;
     
-    // Enter to send
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -801,7 +807,7 @@
         }
     });
     
-    // --- UI HELPERS ---
+    // TYPING ANIMATION
     const phrases = ["Bagus!", "Sob!", "Kreator!"];
     let pIdx = 0, cIdx = 0, isDel = false;
     function type() {
@@ -816,6 +822,7 @@
         }
     }
     
+    // THEME
     const themeBtn = document.getElementById('theme-btn');
     function applyTheme(t) {
         document.documentElement.setAttribute('data-theme', t);
@@ -827,7 +834,7 @@
         applyTheme(now === 'dark' ? 'light' : 'dark');
     };
     
-    // Image handling
+    // IMAGE HANDLING - FIXED
     document.getElementById('gallery-trigger').onclick = () => fileInput.click();
     fileInput.onchange = (e) => {
         const file = e.target.files[0];
@@ -836,7 +843,6 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 pendingImagePreview = ev.target.result;
-                
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'image-preview-container';
                 const img = document.createElement('img');
@@ -855,7 +861,6 @@
                 };
                 previewContainer.appendChild(img);
                 previewContainer.appendChild(removeBtn);
-                
                 innerPreview.innerHTML = '';
                 innerPreview.appendChild(previewContainer);
                 innerPreview.style.display = 'block';
@@ -876,7 +881,6 @@
         sendMessage(); 
     }
     
-    // Expose functions
     window.loadSession = loadSession;
     window.deleteHistory = deleteHistory;
     window.fillInput = fillInput;
