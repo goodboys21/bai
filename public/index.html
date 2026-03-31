@@ -213,7 +213,6 @@
             word-wrap: break-word;
         }
         
-        /* Preview gambar di input - FIXED */
         .image-preview-container {
             position: relative;
             width: 70px;
@@ -428,9 +427,22 @@
         }
     }
     
+    // Fungsi untuk menampilkan welcome view (halaman awal)
+    function showWelcomeView() {
+        isChatStarted = false;
+        chatWindow.style.display = 'none';
+        welcomeView.style.display = 'flex';
+        welcomeView.style.opacity = '1';
+        welcomeView.style.transform = 'translateY(0)';
+        bubbleWrap.classList.remove('hide');
+        chatWindow.innerHTML = '';
+        forceScroll();
+    }
+    
     // Fungsi load session dari API
     async function loadSessionFromApi(sessionId) {
         try {
+            // Tampilkan loading dulu
             chatWindow.innerHTML = '<div class="bubble ai-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div style="margin-top: 5px; font-size: 12px;">Memuat percakapan...</div></div>';
             chatWindow.style.display = 'flex';
             welcomeView.style.display = 'none';
@@ -445,13 +457,24 @@
             if (!response.ok) throw new Error('Gagal memuat sesi');
             const result = await response.json();
             
-            if (!result.success || !result.data || !result.data.history) {
+            if (!result.success || !result.data) {
                 throw new Error('Data sesi tidak valid');
             }
 
-            const messages = result.data.history;
-            chatWindow.innerHTML = '';
+            const messages = result.data.history || [];
             
+            // KALAU HISTORY KOSONG, TAMPILIN WELCOME VIEW
+            if (messages.length === 0) {
+                showWelcomeView();
+                currentSessionId = sessionId;
+                localStorage.setItem('bagus_ai_session', currentSessionId);
+                renderHistory();
+                highlightActiveSession(sessionId);
+                return;
+            }
+            
+            // Kalau ada history, tampilkan chat
+            chatWindow.innerHTML = '';
             currentSessionId = sessionId;
             localStorage.setItem('bagus_ai_session', currentSessionId);
             
@@ -500,7 +523,12 @@
             forceScroll();
         } catch (error) {
             console.error('Error loading session:', error);
-            chatWindow.innerHTML = `<div class="bubble ai-bubble">❌ Gagal memuat percakapan: ${error.message}</div>`;
+            // Kalau error, tampilkan welcome view juga biar user bisa mulai chat baru
+            showWelcomeView();
+            currentSessionId = sessionId;
+            localStorage.setItem('bagus_ai_session', currentSessionId);
+            renderHistory();
+            highlightActiveSession(sessionId);
         }
     }
     
@@ -619,7 +647,7 @@
         const pathId = window.location.pathname.split('/')[1];
         
         if (pathId && pathId.length > 5) {
-            // Ada session ID di URL, langsung load
+            // Ada session ID di URL, load session
             currentSessionId = pathId;
             await loadSessionFromApi(pathId);
         } else {
@@ -630,6 +658,7 @@
                 return;
             } catch (error) {
                 console.error('Gagal membuat session:', error);
+                showWelcomeView();
             }
         }
         
@@ -705,6 +734,7 @@
         if (!val && !hasImage) return;
         if (!currentSessionId) return;
         
+        // Kalau masih di welcome view, ubah ke mode chat
         if (!isChatStarted) {
             isChatStarted = true;
             welcomeView.style.opacity = '0';
@@ -736,9 +766,8 @@
         
         const textToSend = val;
         const imageFileToSend = pendingImageFile;
-        const imagePreviewToKeep = pendingImagePreview;
         
-        // Reset
+        // Reset input
         input.value = '';
         input.style.height = 'auto';
         pendingImageFile = null;
@@ -834,7 +863,7 @@
         applyTheme(now === 'dark' ? 'light' : 'dark');
     };
     
-    // IMAGE HANDLING - FIXED
+    // IMAGE HANDLING
     document.getElementById('gallery-trigger').onclick = () => fileInput.click();
     fileInput.onchange = (e) => {
         const file = e.target.files[0];
