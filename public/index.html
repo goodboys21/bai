@@ -150,6 +150,32 @@
         .dot { width: 6px; height: 6px; background: var(--icon-color); border-radius: 50%; animation: dotPulse 1s infinite alternate; }
         @keyframes dotPulse { from { opacity: 0.4; } to { opacity: 1; } }
 
+        /* Style untuk gambar di chat bubble */
+        .chat-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .chat-image:hover {
+            transform: scale(1.02);
+        }
+        
+        .image-container {
+            margin-top: 8px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .image-caption {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: center;
+        }
+
         footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
         .input-box { width: 100%; max-width: 500px; margin: 0 auto; background: var(--input-bg); border-radius: 24px; padding: 8px 16px; border: 1px solid var(--border-color); }
         .input-row { display: flex; align-items: flex-end; gap: 12px; width: 100%; }
@@ -165,6 +191,26 @@
         .preview-wrapper { width: 100%; height: 100%; position: relative; }
         .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-color); }
         .remove-img-btn { position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid var(--input-bg); }
+        
+        /* Modal untuk preview gambar */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -229,6 +275,11 @@
             </div>
         </footer>
     </div>
+    
+    <!-- Modal untuk preview gambar -->
+    <div id="imageModal" class="image-modal" onclick="closeModal()">
+        <img id="modalImage" src="">
+    </div>
 
 <script>
     const input = document.getElementById('chat-input');
@@ -244,6 +295,9 @@
     const historyList = document.getElementById('history-list');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay-bg');
+    
+    // State untuk gambar yang akan dikirim
+    let pendingImage = null;
 
     // --- STATE MANAGEMENT ---
     let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
@@ -258,7 +312,6 @@
 
     // --- INITIALIZATION ---
     window.onload = async () => {
-        // Mendeteksi ID sesi dari URL domain.com/ID_SESI
         const pathId = window.location.pathname.split('/')[1]; 
         
         if (pathId && pathId.length > 5) {
@@ -277,13 +330,11 @@
     // --- NEW API LOAD FUNCTION ---
     async function loadSessionFromApi(sessionId) {
         try {
-            // Tampilkan loading
             chatWindow.innerHTML = '<div class="bubble ai-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div style="margin-top: 5px; font-size: 12px;">Memuat percakapan...</div></div>';
             chatWindow.style.display = 'flex';
             welcomeView.style.display = 'none';
             isChatStarted = true;
 
-            // Panggil API check session
             const response = await fetch('https://bai-rho.vercel.app/v1/session/check', {
                 method: 'POST',
                 headers: {
@@ -305,20 +356,14 @@
             const sessionData = result.data;
             const messages = sessionData.history;
             
-            // Kosongkan chat window
             chatWindow.innerHTML = '';
             
-            // Set current session
             currentSessionId = sessionId;
             localStorage.setItem('bagus_ai_session', sessionId);
-            
-            // Update URL tanpa reload
             window.history.pushState({}, '', `/${sessionId}`);
             
-            // Simpan ke history lokal
             let localHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
             if (!localHistory.find(h => h.sessionId === sessionId) && messages.length > 0) {
-                // Cari pesan user pertama
                 const firstUserMsg = messages.find(m => m.role === 'user');
                 const title = firstUserMsg ? firstUserMsg.text.substring(0, 25) + (firstUserMsg.text.length > 25 ? '...' : '') : "Percakapan Lama";
                 localHistory.unshift({ 
@@ -330,8 +375,6 @@
             }
             renderHistory();
             
-            // Render semua pesan dalam urutan yang benar (dari yang lama ke baru)
-            // Tampilkan dengan efek typing untuk pesan AI
             for (let i = 0; i < messages.length; i++) {
                 const msg = messages[i];
                 const bubble = document.createElement('div');
@@ -342,24 +385,29 @@
                     bubble.appendChild(textDiv);
                     chatWindow.appendChild(bubble);
                     
-                    // Jika ada gambar di pesan assistant, tampilkan juga
                     let displayText = msg.text || '';
+                    // Tampilkan gambar jika ada
                     if (msg.image) {
-                        displayText += `<br><img src="${msg.image}" style="max-width: 100%; border-radius: 12px; margin-top: 8px;" alt="gambar">`;
+                        displayText += `<div class="image-container"><img class="chat-image" src="${msg.image}" alt="Gambar" onclick="event.stopPropagation(); openImageModal('${msg.image}')"></div>`;
                     }
                     
                     await typeMessageWithDelay(textDiv, formatAiResponse(displayText), i === messages.length - 1);
                 } else if (msg.role === 'user') {
-                    let userText = msg.text || '';
-                    if (msg.image) {
-                        userText += `\n[Gambar: ${msg.image}]`;
+                    // Tampilkan pesan user dengan gambar preview
+                    const contentDiv = document.createElement('div');
+                    let userContent = '';
+                    if (msg.text) {
+                        userContent += `<div>${escapeHtml(msg.text)}</div>`;
                     }
-                    bubble.innerText = userText;
+                    if (msg.image) {
+                        userContent += `<div class="image-container"><img class="chat-image" src="${msg.image}" alt="Gambar" onclick="event.stopPropagation(); openImageModal('${msg.image}')"></div>`;
+                    }
+                    contentDiv.innerHTML = userContent;
+                    bubble.appendChild(contentDiv);
                     chatWindow.appendChild(bubble);
                 }
                 
                 forceScroll();
-                // Delay kecil agar efek typing terlihat natural
                 if (msg.role === 'assistant') await delay(100);
             }
             
@@ -371,7 +419,13 @@
         }
     }
     
-    // Fungsi untuk mengetik pesan dengan efek
+    // Helper function untuk escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     async function typeMessageWithDelay(element, htmlText, isLast = true) {
         element.innerHTML = htmlText;
         addCopyBtn(element);
@@ -382,11 +436,26 @@
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+    
+    // Fungsi untuk membuka modal gambar
+    function openImageModal(imageUrl) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        modal.style.display = 'flex';
+        modalImg.src = imageUrl;
+    }
+    
+    function closeModal() {
+        document.getElementById('imageModal').style.display = 'none';
+    }
 
     // --- NEW SESSION LOGIC ---
     document.getElementById('new-session-btn').onclick = () => {
         isChatStarted = false;
         currentSessionId = null;
+        pendingImage = null;
+        innerPreview.style.display = 'none';
+        fileInput.value = '';
         localStorage.removeItem('bagus_ai_session');
         window.history.pushState({}, '', '/');
         chatWindow.innerHTML = ''; 
@@ -465,10 +534,12 @@
         element.parentElement.appendChild(cB);
     }
 
-    // --- SEND LOGIC ---
+    // --- SEND LOGIC WITH IMAGE ---
     async function sendMessage() {
         const val = input.value.trim();
-        if (!val) return;
+        const hasImage = pendingImage !== null;
+        
+        if (!val && !hasImage) return;
 
         if (!isChatStarted) {
             isChatStarted = true;
@@ -479,14 +550,37 @@
             }, 400);
         }
 
+        // Buat bubble user dengan gambar preview
         const uB = document.createElement('div');
         uB.className = 'bubble user-bubble';
-        uB.innerText = val;
+        
+        const contentDiv = document.createElement('div');
+        let userContent = '';
+        
+        if (val) {
+            userContent += `<div>${escapeHtml(val)}</div>`;
+        }
+        
+        if (hasImage) {
+            userContent += `<div class="image-container"><img class="chat-image" src="${pendingImage}" alt="Gambar" onclick="event.stopPropagation(); openImageModal('${pendingImage}')"></div>`;
+        }
+        
+        contentDiv.innerHTML = userContent;
+        uB.appendChild(contentDiv);
         chatWindow.appendChild(uB);
+        
+        // Simpan data untuk dikirim
+        const imageToSend = pendingImage;
+        
+        // Reset input
         input.value = '';
         input.style.height = 'auto';
+        pendingImage = null;
+        innerPreview.style.display = 'none';
+        fileInput.value = '';
         forceScroll();
 
+        // Tampilkan loading AI
         const aB = document.createElement('div');
         aB.className = 'bubble ai-bubble';
         aB.innerHTML = `<div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
@@ -497,7 +591,11 @@
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: val, sessionId: currentSessionId })
+                body: JSON.stringify({ 
+                    message: val, 
+                    image: imageToSend,
+                    sessionId: currentSessionId 
+                })
             });
 
             const data = await response.json();
@@ -505,7 +603,6 @@
             const aiResponse = data.response || data.text;
             
             if (data.sessionId) {
-                // Decode sessionId jika perlu
                 let fileId = data.sessionId;
                 try {
                     const decoded = JSON.parse(atob(data.sessionId));
@@ -516,12 +613,12 @@
                 
                 currentSessionId = data.sessionId;
                 localStorage.setItem('bagus_ai_session', data.sessionId);
-                
                 window.history.pushState({}, '', `/${fileId}`);
                 
                 let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
                 if (!history.find(h => h.sessionId === fileId)) {
-                    history.unshift({ title: val.substring(0, 20) + (val.length > 20 ? '...' : ''), sessionId: fileId });
+                    const title = val ? val.substring(0, 20) + (val.length > 20 ? '...' : '') : 'Gambar';
+                    history.unshift({ title: title, sessionId: fileId });
                     localStorage.setItem('bagus_ai_history', JSON.stringify(history));
                     renderHistory();
                 }
@@ -575,16 +672,26 @@
         applyTheme(now === 'dark' ? 'light' : 'dark');
     };
 
+    // Image handling
     document.getElementById('gallery-trigger').onclick = () => fileInput.click();
     fileInput.onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (ev) => { imagePreview.src = ev.target.result; innerPreview.style.display = 'block'; forceScroll(); };
+            reader.onload = (ev) => { 
+                pendingImage = ev.target.result;
+                imagePreview.src = ev.target.result; 
+                innerPreview.style.display = 'block'; 
+                forceScroll();
+            };
             reader.readAsDataURL(file);
         }
     };
-    document.getElementById('remove-img').onclick = () => { fileInput.value = ''; innerPreview.style.display = 'none'; };
+    document.getElementById('remove-img').onclick = () => { 
+        pendingImage = null;
+        fileInput.value = ''; 
+        innerPreview.style.display = 'none'; 
+    };
     input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
 
     function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
@@ -593,6 +700,8 @@
     window.loadSession = loadSession;
     window.deleteHistory = deleteHistory;
     window.fillInput = fillInput;
+    window.openImageModal = openImageModal;
+    window.closeModal = closeModal;
 </script>
 </body>
 </html>
