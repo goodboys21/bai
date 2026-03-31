@@ -311,8 +311,7 @@ app.post('/v1/chat', async (req, res) => {
         }
 
         // Simpan ke history
-        const userMessageText = image ? `${message || "Mengirim gambar"} [Gambar: ${image}]` : message;
-        
+        const userMessageText = message || (image ? "Mengirim gambar" : ""); 
         const updatedHistory = [
             ...history,
             { role: "user", text: userMessageText, image: image || null, timestamp: new Date().toISOString() },
