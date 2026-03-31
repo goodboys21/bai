@@ -1,5 +1,7 @@
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
+const crypto = require('crypto');
 const app = express();
 
 app.use(express.json());
@@ -20,24 +22,6 @@ const CONFIG = {
     }
 };
 
-const SYSTEM_INSTRUCTION = {
-    role: "user",
-    parts: [{
-        text: SYSTEM_PROMPT
-    }]
-};
-
-// --- GITHUB CONFIG LOADER ---
-async function getGithubConfig() {
-    try {
-        const { data } = await axios.get('https://json.link/q1KFQ6wP6L.json');
-        return data;
-    } catch (e) {
-        console.error("Gagal memuat konfigurasi GitHub:", e.message);
-        return null;
-    }
-}
-
 // --- FUNGSI GET TOKEN GEMMY ---
 async function getNewToken() {
     try {
@@ -57,6 +41,54 @@ async function getNewToken() {
         return response.data.idToken;
     } catch (error) {
         console.error(`[Token Error]:`, error.response?.data || error.message);
+        return null;
+    }
+}
+
+// --- FUNGSI CONVERT GAMBAR KE BASE64 ---
+async function toBase64(input) {
+    try {
+        let buffer;
+        if (Buffer.isBuffer(input)) {
+            buffer = input;
+        } else if (typeof input === 'string' && input.startsWith('http')) {
+            const res = await axios.get(input, { responseType: 'arraybuffer' });
+            buffer = Buffer.from(res.data);
+        } else if (typeof input === 'string' && fs.existsSync(input)) {
+            buffer = fs.readFileSync(input);
+        } else if (typeof input === 'string') {
+            // Mungkin sudah base64
+            return input;
+        } else {
+            return null;
+        }
+        return buffer.toString('base64');
+    } catch (e) {
+        console.error("Gagal konversi ke base64:", e.message);
+        return null;
+    }
+}
+
+// --- FUNGSI GET MIME TYPE ---
+function getMimeType(urlOrPath) {
+    const ext = urlOrPath.split('.').pop().toLowerCase();
+    const mimes = { 
+        'jpg': 'image/jpeg', 
+        'jpeg': 'image/jpeg', 
+        'png': 'image/png', 
+        'webp': 'image/webp',
+        'gif': 'image/gif'
+    };
+    return mimes[ext] || 'image/jpeg';
+}
+
+// --- GITHUB CONFIG LOADER ---
+async function getGithubConfig() {
+    try {
+        const { data } = await axios.get('https://json.link/q1KFQ6wP6L.json');
+        return data;
+    } catch (e) {
+        console.error("Gagal memuat konfigurasi GitHub:", e.message);
         return null;
     }
 }
@@ -120,39 +152,69 @@ async function saveSession(sessionId, sessionData, config) {
     }
 }
 
-// --- FUNGSI FORMAT HISTORY UNTUK GEMMY ---
-function formatHistoryForGemmy(history, currentMessage) {
-    let formattedHistory = [];
-    
-    formattedHistory.push(SYSTEM_INSTRUCTION);
-    
-    const recentHistory = history.slice(-30);
-    
-    for (const msg of recentHistory) {
-        formattedHistory.push({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }]
-        });
-    }
-    
-    formattedHistory.push({
-        role: "user",
-        parts: [{ text: currentMessage }]
-    });
-    
-    return formattedHistory;
-}
-
-// --- FUNGSI CHAT DENGAN GEMMY ---
-async function gemmyChat(message, history) {
+// --- FUNGSI CHAT DENGAN GEMMY (SUPPORT IMAGE) ---
+async function gemmyChat(message, history, media = null) {
     try {
         const token = await getNewToken();
         if (!token) {
             throw new Error('Gagal mendapatkan token');
         }
 
-        const formattedHistory = formatHistoryForGemmy(history, message);
+        // Siapkan parts untuk pesan user
+        let parts = [];
+        
+        // Jika ada media (gambar)
+        if (media) {
+            const base64Data = await toBase64(media);
+            if (base64Data) {
+                // Cek apakah media adalah gambar (URL atau path)
+                const isImage = typeof media === 'string' && /\.(jpg|jpeg|png|webp|gif)$/i.test(media);
+                if (isImage) {
+                    parts.push({
+                        inlineData: {
+                            mimeType: getMimeType(media),
+                            data: base64Data
+                        }
+                    });
+                    parts.push({ text: message });
+                } else {
+                    // Bukan gambar, treat sebagai dokumen
+                    const decodedText = Buffer.from(base64Data, 'base64').toString('utf-8');
+                    parts.push({ text: `${message}\n\n--- FILE CONTENT ---\n\n${decodedText}` });
+                }
+            } else {
+                parts.push({ text: message });
+            }
+        } else {
+            parts.push({ text: message });
+        }
 
+        // Format history untuk Gemmy
+        let formattedHistory = [];
+        
+        // System instruction
+        formattedHistory.push({
+            role: "user",
+            parts: [{ text: SYSTEM_PROMPT }]
+        });
+        
+        // Ambil 30 pesan terakhir
+        const recentHistory = history.slice(-30);
+        
+        for (const msg of recentHistory) {
+            formattedHistory.push({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.text }]
+            });
+        }
+        
+        // Tambahkan pesan user saat ini dengan media
+        formattedHistory.push({
+            role: "user",
+            parts: parts
+        });
+
+        // Payload ke Gemmy
         const payload = {
             model: CONFIG.GEMINI.MODEL,
             request: {
@@ -186,7 +248,7 @@ async function gemmyChat(message, history) {
     }
 }
 
-// --- ENDPOINT CHAT ---
+// --- ENDPOINT CHAT (SUPPORT IMAGE) ---
 app.post('/v1/chat', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -197,7 +259,7 @@ app.post('/v1/chat', async (req, res) => {
     }
 
     try {
-        const { sessionId, message } = req.body;
+        const { sessionId, message, image } = req.body;
         
         if (!sessionId) {
             return res.status(400).json({
@@ -206,10 +268,10 @@ app.post('/v1/chat', async (req, res) => {
             });
         }
         
-        if (!message) {
+        if (!message && !image) {
             return res.status(400).json({
                 success: false,
-                error: 'Pesan tidak boleh kosong'
+                error: 'Pesan atau gambar diperlukan'
             });
         }
         
@@ -237,7 +299,9 @@ app.post('/v1/chat', async (req, res) => {
         }
 
         const history = sessionData.history || [];
-        const aiResponse = await gemmyChat(message, history);
+        
+        // Kirim ke AI dengan image jika ada
+        const aiResponse = await gemmyChat(message || "Apa yang ada di gambar ini?", history, image || null);
         
         if (!aiResponse.success) {
             return res.status(500).json({
@@ -246,9 +310,12 @@ app.post('/v1/chat', async (req, res) => {
             });
         }
 
+        // Simpan ke history
+        const userMessageText = image ? `${message || "Mengirim gambar"} [Gambar: ${image}]` : message;
+        
         const updatedHistory = [
             ...history,
-            { role: "user", text: message, timestamp: new Date().toISOString() },
+            { role: "user", text: userMessageText, image: image || null, timestamp: new Date().toISOString() },
             { role: "assistant", text: aiResponse.text, timestamp: new Date().toISOString() }
         ];
         
