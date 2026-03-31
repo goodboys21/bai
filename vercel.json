@@ -16,7 +16,7 @@
       "destination": "api/chat.js"
     },
     {
-      "source": "v1/session/create",
+      "source": "/v1/session/create",
       "destination": "api/create-session.js"
     },
     {
