@@ -51,7 +51,7 @@ app.post('/v1/session/check', async (req, res) => {
         }
 
         // URL Raw GitHub untuk mengambil konten file JSON
-        const url = `https://raw.githubusercontent.com/${config.username}/coigus/${config.branch}/sessions/${sessionId}.json`;
+        const url = `https://raw.githubusercontent.com/${config.username}/session-ai/${config.branch}/sessions/${sessionId}.json`;
         
         const response = await axios.get(url, {
             headers: {
