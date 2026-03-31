@@ -14,7 +14,6 @@
             --border-color: #ddd;
             --input-bg: #f0f0f2;
             --icon-color: #555;
-            --theme-icon: #f59e0b;
             --user-bubble: #e3f2fd;
             --ai-bubble: #f1f1f1;
             --shadow: rgba(0,0,0,0.05);
@@ -29,7 +28,6 @@
             --border-color: #333;
             --input-bg: #1e1e1e;
             --icon-color: #888;
-            --theme-icon: #a78bfa;
             --user-bubble: #0b3d91;
             --ai-bubble: #262626;
             --shadow: rgba(0,0,0,0.3);
@@ -165,7 +163,8 @@
         .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-color); }
         .remove-img-btn { position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid var(--input-bg); }
         
-        .upload-progress { font-size: 11px; color: var(--icon-color); margin-top: 4px; }
+        .upload-progress { font-size: 11px; color: var(--icon-color); margin-top: 4px; text-align: center; }
+        .upload-progress i { margin-right: 4px; }
     </style>
 </head>
 <body>
@@ -233,7 +232,7 @@
 
 <script>
     // ============ KONFIGURASI ============
-    const API_BASE = 'https://bai-rho.vercel.app'; // Ganti dengan domain API lo
+    const API_BASE = 'https://bai-rho.vercel.app';
     let currentSessionId = null;
     let currentImageUrl = null;
     let isLoadingSession = false;
@@ -253,26 +252,27 @@
     const uploadStatus = document.getElementById('upload-status');
     const content = document.getElementById('content-ready');
 
-    // ============ FUNGSI UPLOAD KE UGUU ============
-    async function uploadToUguu(file) {
+    // ============ FUNGSI UPLOAD KE API BAGUS ============
+    async function uploadToBagusApi(file) {
         const formData = new FormData();
         formData.append('file', file);
         
         uploadStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading image...';
         
         try {
-            const response = await fetch('https://uguu.se/upload.php', {
+            const response = await fetch('https://api.baguss.xyz/api/tools/tourl', {
                 method: 'POST',
                 body: formData
             });
             
             const result = await response.json();
-            if (result.success && result.url) {
+            
+            if (result.status && result.result && result.result.url) {
                 uploadStatus.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#4ade80"></i> Gambar terupload!';
                 setTimeout(() => uploadStatus.innerHTML = '', 2000);
-                return result.url;
+                return result.result.url;
             } else {
-                throw new Error('Upload failed');
+                throw new Error(result.message || 'Upload failed');
             }
         } catch (error) {
             console.error('Upload error:', error);
@@ -305,7 +305,7 @@
 
     // ============ FUNGSI LOAD SESSION ============
     async function loadSession(sessionId) {
-        if (isLoadingSession) return;
+        if (isLoadingSession) return false;
         isLoadingSession = true;
         
         try {
@@ -337,12 +337,11 @@
                         cont.innerHTML = formatAiResponse(msg.text);
                         addCopyBtn(cont);
                     } else {
-                        // Tampilkan pesan user, jika ada gambar tampilkan
-                        let displayText = msg.text;
+                        let displayText = msg.text || '';
                         if (msg.image) {
-                            displayText = `📷 ${displayText || 'Mengirim gambar'}`;
+                            displayText = `📷 ${displayText}`;
                         }
-                        bubble.innerText = displayText;
+                        bubble.innerText = displayText || 'Mengirim gambar';
                         chatWindow.appendChild(bubble);
                     }
                 }
@@ -350,7 +349,8 @@
                 forceScroll();
                 
                 // Simpan ke local history
-                saveToLocalHistory(sessionId, history[0]?.text || 'Chat Session');
+                const firstMsg = history.find(m => m.role === 'user')?.text || 'Chat Session';
+                saveToLocalHistory(sessionId, firstMsg.substring(0, 30));
                 renderHistoryList();
                 
                 return true;
@@ -378,11 +378,11 @@
         // Tampilkan bubble user
         const userBubble = document.createElement('div');
         userBubble.className = 'bubble user-bubble';
-        let userText = message;
+        let userText = message || '';
         if (currentImageUrl) {
-            userText = `${message || 'Mengirim gambar'} 📷`;
+            userText = `${userText} 📷`.trim();
         }
-        userBubble.innerText = userText;
+        userBubble.innerText = userText || 'Mengirim gambar';
         chatWindow.appendChild(userBubble);
         
         // Clear input
@@ -390,6 +390,7 @@
         input.style.height = 'auto';
         
         // Clear image preview
+        const imageUrlToSend = currentImageUrl;
         if (currentImageUrl) {
             innerPreview.style.display = 'none';
             currentImageUrl = null;
@@ -408,7 +409,8 @@
         try {
             // Pastikan ada session
             if (!currentSessionId) {
-                await createSession();
+                const newId = await createSession();
+                if (!newId) throw new Error('Gagal membuat session');
             }
             
             // Prepare payload
@@ -417,8 +419,8 @@
                 message: message || "Apa yang ada di gambar ini?"
             };
             
-            if (currentImageUrl) {
-                payload.image = currentImageUrl;
+            if (imageUrlToSend) {
+                payload.image = imageUrlToSend;
             }
             
             const response = await fetch(`${API_BASE}/v1/chat`, {
@@ -443,7 +445,7 @@
                 addCopyBtn(cont);
                 
                 // Update local history
-                const firstMsg = chatWindow.querySelector('.user-bubble')?.innerText || message;
+                const firstMsg = message || (imageUrlToSend ? 'Gambar' : 'Chat');
                 saveToLocalHistory(currentSessionId, firstMsg.substring(0, 30));
                 renderHistoryList();
             } else {
@@ -466,7 +468,7 @@
     fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
-            const url = await uploadToUguu(file);
+            const url = await uploadToBagusApi(file);
             if (url) {
                 currentImageUrl = url;
                 imagePreview.src = url;
@@ -480,6 +482,7 @@
         currentImageUrl = null;
         fileInput.value = '';
         innerPreview.style.display = 'none';
+        uploadStatus.innerHTML = '';
     };
 
     document.getElementById('gallery-trigger').onclick = () => fileInput.click();
@@ -515,9 +518,9 @@
     // ============ HISTORY MANAGEMENT ============
     function saveToLocalHistory(sessionId, title) {
         let history = JSON.parse(localStorage.getItem('bagus_ai_sessions')) || [];
-        if (!history.find(h => h.sessionId === sessionId)) {
+        const existingIndex = history.findIndex(h => h.sessionId === sessionId);
+        if (existingIndex === -1) {
             history.unshift({ sessionId, title: title.substring(0, 30), timestamp: Date.now() });
-            // Keep only last 20 sessions
             history = history.slice(0, 20);
             localStorage.setItem('bagus_ai_sessions', JSON.stringify(history));
         }
@@ -537,17 +540,17 @@
         });
     }
 
-    function switchToSession(sessionId) {
+    window.switchToSession = function(sessionId) {
         window.location.href = `/${sessionId}`;
-    }
+    };
 
-    function deleteHistoryItem(event, sessionId) {
+    window.deleteHistoryItem = function(event, sessionId) {
         event.stopPropagation();
         let history = JSON.parse(localStorage.getItem('bagus_ai_sessions')) || [];
         history = history.filter(h => h.sessionId !== sessionId);
         localStorage.setItem('bagus_ai_sessions', JSON.stringify(history));
         renderHistoryList();
-    }
+    };
 
     // ============ NEW SESSION ============
     async function newSession() {
@@ -560,24 +563,25 @@
             currentImageUrl = null;
             innerPreview.style.display = 'none';
             fileInput.value = '';
+            uploadStatus.innerHTML = '';
             forceScroll();
         }
     }
 
     // ============ INITIALIZATION ============
     async function init() {
-        // Get session ID from URL
         const pathId = window.location.pathname.split('/')[1];
         
-        if (pathId && pathId.length === 15 && /^[a-z0-9]+$/.test(pathId)) {
-            // Load existing session
+        if (pathId && pathId.length === 15 && /^[a-z0-9]{15}$/.test(pathId)) {
+            // Ada session ID di URL, coba load
             const loaded = await loadSession(pathId);
             if (!loaded) {
-                // Session not found, create new
+                // Session tidak ditemukan, buat baru
+                console.log('Session not found, creating new...');
                 await createSession();
             }
         } else {
-            // No session in URL, create new
+            // Tidak ada session ID, buat baru
             await createSession();
         }
         
@@ -585,7 +589,8 @@
         
         // Hide preloader
         setTimeout(() => {
-            document.getElementById('preloader-overlay').style.display = 'none';
+            const preloader = document.getElementById('preloader-overlay');
+            if (preloader) preloader.style.display = 'none';
             content.style.filter = 'blur(0px)';
         }, 1000);
     }
@@ -597,7 +602,7 @@
     
     input.addEventListener('input', function() {
         this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
+        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
     });
     
     input.addEventListener('keypress', (e) => {
@@ -607,7 +612,6 @@
         }
     });
     
-    // Suggestion cards
     document.querySelectorAll('.card').forEach(card => {
         card.onclick = () => {
             input.value = card.getAttribute('data-suggest') || card.innerText;
@@ -615,7 +619,7 @@
         };
     });
     
-    // Sidebar toggle
+    // Sidebar
     document.getElementById('burger-trigger').onclick = () => {
         sidebar.classList.add('open');
         overlay.style.display = 'block';
@@ -634,7 +638,12 @@
         document.documentElement.setAttribute('data-theme', t);
         themeBtn.className = t === 'dark' ? 'fa-regular fa-moon theme-toggle' : 'fa-regular fa-sun theme-toggle';
     }
-    applyTheme(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        applyTheme(savedTheme);
+    } else {
+        applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
     themeBtn.onclick = () => {
         const now = document.documentElement.getAttribute('data-theme');
         const newTheme = now === 'dark' ? 'light' : 'dark';
@@ -660,10 +669,6 @@
     
     // Start
     init();
-    
-    // Expose functions for inline onclick
-    window.switchToSession = switchToSession;
-    window.deleteHistoryItem = deleteHistoryItem;
 </script>
 </body>
 </html>
