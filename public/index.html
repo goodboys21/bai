@@ -150,30 +150,88 @@
         .dot { width: 6px; height: 6px; background: var(--icon-color); border-radius: 50%; animation: dotPulse 1s infinite alternate; }
         @keyframes dotPulse { from { opacity: 0.4; } to { opacity: 1; } }
 
-        /* Style untuk gambar di chat bubble */
-        .chat-image {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 12px;
+        /* Style untuk gambar di chat bubble - Style WA */
+        .chat-image-container {
             margin-top: 8px;
+            position: relative;
+            display: inline-block;
+            width: 200px;
+            height: 200px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--card-bg);
             cursor: pointer;
+        }
+        
+        .chat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             transition: transform 0.2s;
         }
+        
         .chat-image:hover {
             transform: scale(1.02);
         }
         
-        .image-container {
-            margin-top: 8px;
+        /* Style untuk pesan yang memiliki gambar */
+        .message-with-image {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .message-text {
+            word-wrap: break-word;
+        }
+        
+        /* Style preview gambar di input (1:1) */
+        .image-preview-container {
             position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--card-bg);
+            margin-bottom: 8px;
             display: inline-block;
         }
         
-        .image-caption {
-            font-size: 12px;
-            opacity: 0.7;
-            margin-top: 4px;
-            text-align: center;
+        .image-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .remove-img-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4d4d;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            border: 2px solid var(--bg-color);
+            z-index: 10;
+        }
+        
+        .remove-img-btn:hover {
+            background: #ff3333;
+            transform: scale(1.05);
+        }
+        
+        /* Preview area di input */
+        .preview-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
         }
 
         footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
@@ -187,10 +245,7 @@
         }
 
         .icon-btn { color: var(--icon-color); cursor: pointer; font-size: 18px; margin-bottom: 10px; }
-        #inner-preview { display: none; margin-bottom: 8px; position: relative; width: 60px; height: 60px; }
-        .preview-wrapper { width: 100%; height: 100%; position: relative; }
-        .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-color); }
-        .remove-img-btn { position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid var(--input-bg); }
+        #inner-preview { display: none; }
         
         /* Modal untuk preview gambar */
         .image-modal {
@@ -200,7 +255,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             z-index: 10000;
             justify-content: center;
             align-items: center;
@@ -210,6 +265,7 @@
             max-width: 90%;
             max-height: 90%;
             object-fit: contain;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -260,12 +316,7 @@
 
         <footer>
             <div class="input-box">
-                <div id="inner-preview">
-                    <div class="preview-wrapper">
-                        <img id="image-preview" src="">
-                        <div class="remove-img-btn" id="remove-img">×</div>
-                    </div>
-                </div>
+                <div id="inner-preview" class="preview-area"></div>
                 <div class="input-row">
                     <i class="fa-regular fa-image icon-btn" id="gallery-trigger"></i>
                     <input type="file" id="file-input" accept="image/*" style="display: none;">
@@ -290,7 +341,6 @@
     const bubbleWrap = document.getElementById('bubble-wrap');
     const content = document.getElementById('content-ready');
     const fileInput = document.getElementById('file-input');
-    const imagePreview = document.getElementById('image-preview');
     const innerPreview = document.getElementById('inner-preview');
     const historyList = document.getElementById('history-list');
     const sidebar = document.getElementById('sidebar');
@@ -298,6 +348,7 @@
     
     // State untuk gambar yang akan dikirim
     let pendingImage = null;
+    let pendingImageUrl = null;
 
     // --- STATE MANAGEMENT ---
     let chatHistory = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
@@ -380,30 +431,50 @@
                 const bubble = document.createElement('div');
                 bubble.className = `bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`;
                 
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message-with-image';
+                
                 if (msg.role === 'assistant' || msg.role === 'bot' || msg.role === 'ai') {
-                    const textDiv = document.createElement('div');
-                    bubble.appendChild(textDiv);
-                    chatWindow.appendChild(bubble);
-                    
                     let displayText = msg.text || '';
-                    // Tampilkan gambar jika ada
-                    if (msg.image) {
-                        displayText += `<div class="image-container"><img class="chat-image" src="${msg.image}" alt="Gambar" onclick="event.stopPropagation(); openImageModal('${msg.image}')"></div>`;
+                    if (displayText) {
+                        const textSpan = document.createElement('div');
+                        textSpan.className = 'message-text';
+                        textSpan.innerHTML = formatAiResponse(displayText);
+                        messageDiv.appendChild(textSpan);
                     }
-                    
-                    await typeMessageWithDelay(textDiv, formatAiResponse(displayText), i === messages.length - 1);
+                    if (msg.image) {
+                        const imgContainer = document.createElement('div');
+                        imgContainer.className = 'chat-image-container';
+                        imgContainer.onclick = () => openImageModal(msg.image);
+                        const img = document.createElement('img');
+                        img.className = 'chat-image';
+                        img.src = msg.image;
+                        img.alt = 'Gambar';
+                        imgContainer.appendChild(img);
+                        messageDiv.appendChild(imgContainer);
+                    }
+                    bubble.appendChild(messageDiv);
+                    chatWindow.appendChild(bubble);
+                    addCopyBtn(bubble);
                 } else if (msg.role === 'user') {
-                    // Tampilkan pesan user dengan gambar preview
-                    const contentDiv = document.createElement('div');
-                    let userContent = '';
                     if (msg.text) {
-                        userContent += `<div>${escapeHtml(msg.text)}</div>`;
+                        const textSpan = document.createElement('div');
+                        textSpan.className = 'message-text';
+                        textSpan.innerText = msg.text;
+                        messageDiv.appendChild(textSpan);
                     }
                     if (msg.image) {
-                        userContent += `<div class="image-container"><img class="chat-image" src="${msg.image}" alt="Gambar" onclick="event.stopPropagation(); openImageModal('${msg.image}')"></div>`;
+                        const imgContainer = document.createElement('div');
+                        imgContainer.className = 'chat-image-container';
+                        imgContainer.onclick = () => openImageModal(msg.image);
+                        const img = document.createElement('img');
+                        img.className = 'chat-image';
+                        img.src = msg.image;
+                        img.alt = 'Gambar';
+                        imgContainer.appendChild(img);
+                        messageDiv.appendChild(imgContainer);
                     }
-                    contentDiv.innerHTML = userContent;
-                    bubble.appendChild(contentDiv);
+                    bubble.appendChild(messageDiv);
                     chatWindow.appendChild(bubble);
                 }
                 
@@ -428,7 +499,7 @@
     
     async function typeMessageWithDelay(element, htmlText, isLast = true) {
         element.innerHTML = htmlText;
-        addCopyBtn(element);
+        addCopyBtn(element.parentElement);
         forceScroll();
         return new Promise(resolve => setTimeout(resolve, isLast ? 200 : 50));
     }
@@ -454,6 +525,8 @@
         isChatStarted = false;
         currentSessionId = null;
         pendingImage = null;
+        pendingImageUrl = null;
+        innerPreview.innerHTML = '';
         innerPreview.style.display = 'none';
         fileInput.value = '';
         localStorage.removeItem('bagus_ai_session');
@@ -493,7 +566,7 @@
             const div = document.createElement('div');
             div.className = 'history-item';
             div.innerHTML = `
-                <span onclick="loadSession('${item.sessionId}')" style="cursor:pointer; flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title}</span>
+                <span onclick="loadSession('${item.sessionId}')" style="cursor:pointer; flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.title)}</span>
                 <i class="fa-regular fa-trash-can trash-btn" onclick="deleteHistory(event, ${index})"></i>
             `;
             historyList.appendChild(div);
@@ -521,17 +594,21 @@
             .replace(/\n/g, '<br>');
     }
 
-    function addCopyBtn(element) {
-        if (element.parentElement.querySelector('.copy-btn')) return;
+    function addCopyBtn(bubbleElement) {
+        if (bubbleElement.querySelector('.copy-btn')) return;
+        const textElement = bubbleElement.querySelector('.message-text');
+        if (!textElement) return;
+        
         const cB = document.createElement('div');
         cB.className = 'copy-btn';
         cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin';
         cB.onclick = () => {
-            navigator.clipboard.writeText(element.innerText);
+            const textToCopy = textElement.innerText || textElement.textContent;
+            navigator.clipboard.writeText(textToCopy);
             cB.innerHTML = '<i class="fa-solid fa-check" style="color:#4ade80"></i> Tersalin!';
             setTimeout(() => cB.innerHTML = '<i class="fa-regular fa-copy"></i> Salin', 2000);
         };
-        element.parentElement.appendChild(cB);
+        bubbleElement.appendChild(cB);
     }
 
     // --- SEND LOGIC WITH IMAGE ---
@@ -550,32 +627,45 @@
             }, 400);
         }
 
-        // Buat bubble user dengan gambar preview
+        // Buat bubble user dengan gambar preview 1:1
         const uB = document.createElement('div');
         uB.className = 'bubble user-bubble';
         
-        const contentDiv = document.createElement('div');
-        let userContent = '';
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-with-image';
         
         if (val) {
-            userContent += `<div>${escapeHtml(val)}</div>`;
+            const textSpan = document.createElement('div');
+            textSpan.className = 'message-text';
+            textSpan.innerText = val;
+            messageDiv.appendChild(textSpan);
         }
         
         if (hasImage) {
-            userContent += `<div class="image-container"><img class="chat-image" src="${pendingImage}" alt="Gambar" onclick="event.stopPropagation(); openImageModal('${pendingImage}')"></div>`;
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'chat-image-container';
+            imgContainer.onclick = () => openImageModal(pendingImage);
+            const img = document.createElement('img');
+            img.className = 'chat-image';
+            img.src = pendingImage;
+            img.alt = 'Gambar';
+            imgContainer.appendChild(img);
+            messageDiv.appendChild(imgContainer);
         }
         
-        contentDiv.innerHTML = userContent;
-        uB.appendChild(contentDiv);
+        uB.appendChild(messageDiv);
         chatWindow.appendChild(uB);
         
         // Simpan data untuk dikirim
         const imageToSend = pendingImage;
+        const textToSend = val;
         
         // Reset input
         input.value = '';
         input.style.height = 'auto';
         pendingImage = null;
+        pendingImageUrl = null;
+        innerPreview.innerHTML = '';
         innerPreview.style.display = 'none';
         fileInput.value = '';
         forceScroll();
@@ -592,7 +682,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    message: val, 
+                    message: textToSend, 
                     image: imageToSend,
                     sessionId: currentSessionId 
                 })
@@ -617,17 +707,21 @@
                 
                 let history = JSON.parse(localStorage.getItem('bagus_ai_history')) || [];
                 if (!history.find(h => h.sessionId === fileId)) {
-                    const title = val ? val.substring(0, 20) + (val.length > 20 ? '...' : '') : 'Gambar';
+                    const title = textToSend ? textToSend.substring(0, 20) + (textToSend.length > 20 ? '...' : '') : 'Gambar';
                     history.unshift({ title: title, sessionId: fileId });
                     localStorage.setItem('bagus_ai_history', JSON.stringify(history));
                     renderHistory();
                 }
             }
 
-            const textCont = document.createElement('div');
-            aB.appendChild(textCont);
-            textCont.innerHTML = formatAiResponse(aiResponse);
-            addCopyBtn(textCont);
+            const aiMessageDiv = document.createElement('div');
+            aiMessageDiv.className = 'message-with-image';
+            const textSpan = document.createElement('div');
+            textSpan.className = 'message-text';
+            textSpan.innerHTML = formatAiResponse(aiResponse);
+            aiMessageDiv.appendChild(textSpan);
+            aB.appendChild(aiMessageDiv);
+            addCopyBtn(aB);
             forceScroll();
 
         } catch (error) {
@@ -672,7 +766,7 @@
         applyTheme(now === 'dark' ? 'light' : 'dark');
     };
 
-    // Image handling
+    // Image handling dengan preview 1:1
     document.getElementById('gallery-trigger').onclick = () => fileInput.click();
     fileInput.onchange = (e) => {
         const file = e.target.files[0];
@@ -680,18 +774,35 @@
             const reader = new FileReader();
             reader.onload = (ev) => { 
                 pendingImage = ev.target.result;
-                imagePreview.src = ev.target.result; 
-                innerPreview.style.display = 'block'; 
+                
+                // Buat preview 1:1
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'image-preview-container';
+                const img = document.createElement('img');
+                img.src = ev.target.result;
+                img.alt = 'Preview';
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'remove-img-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    pendingImage = null;
+                    innerPreview.innerHTML = '';
+                    innerPreview.style.display = 'none';
+                    fileInput.value = '';
+                };
+                previewContainer.appendChild(img);
+                previewContainer.appendChild(removeBtn);
+                
+                innerPreview.innerHTML = '';
+                innerPreview.appendChild(previewContainer);
+                innerPreview.style.display = 'block';
                 forceScroll();
             };
             reader.readAsDataURL(file);
         }
     };
-    document.getElementById('remove-img').onclick = () => { 
-        pendingImage = null;
-        fileInput.value = ''; 
-        innerPreview.style.display = 'none'; 
-    };
+    
     input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
 
     function fillInput(t) { input.value = t; input.dispatchEvent(new Event('input')); sendMessage(); }
