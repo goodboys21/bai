@@ -20,7 +20,7 @@
       "destination": "api/create-session.js"
     },
     {
-      "source": "/api/load/:sessionId",
+      "source": "/v1/session/check",
       "destination": "api/load.js"
     },
     {
