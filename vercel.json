@@ -16,6 +16,10 @@
       "destination": "api/chat.js"
     },
     {
+      "source": "v1/session/create",
+      "destination": "api/create-session.js"
+    },
+    {
       "source": "/api/load/:sessionId",
       "destination": "api/load.js"
     },
