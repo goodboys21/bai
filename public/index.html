@@ -786,3 +786,102 @@
             forceScroll();
             
         } catch (error) {
+            console.error('Send error:', error);
+            aB.innerHTML = "⚠️ Waduh Sob, Bagus Ai lagi pusing. Coba ulangi sebentar ya!";
+        }
+    }
+    
+    sendBtn.onclick = sendMessage;
+    
+    // Enter to send
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // --- UI HELPERS ---
+    const phrases = ["Bagus!", "Sob!", "Kreator!"];
+    let pIdx = 0, cIdx = 0, isDel = false;
+    function type() {
+        const cur = phrases[pIdx];
+        const el = document.getElementById('typer');
+        if(el) {
+            el.innerText = isDel ? cur.substring(0, cIdx--) : cur.substring(0, cIdx++);
+            let speed = isDel ? 100 : 200;
+            if(!isDel && cIdx > cur.length) { isDel = true; speed = 2500; }
+            else if(isDel && cIdx < 0) { isDel = false; pIdx = (pIdx + 1) % phrases.length; speed = 500; }
+            setTimeout(type, speed);
+        }
+    }
+    
+    const themeBtn = document.getElementById('theme-btn');
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        themeBtn.className = t === 'dark' ? 'fa-regular fa-moon theme-toggle' : 'fa-regular fa-sun theme-toggle';
+    }
+    applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    themeBtn.onclick = () => {
+        const now = document.documentElement.getAttribute('data-theme');
+        applyTheme(now === 'dark' ? 'light' : 'dark');
+    };
+    
+    // Image handling
+    document.getElementById('gallery-trigger').onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            pendingImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                pendingImagePreview = ev.target.result;
+                
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'image-preview-container';
+                const img = document.createElement('img');
+                img.src = ev.target.result;
+                img.alt = 'Preview';
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'remove-img-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    pendingImageFile = null;
+                    pendingImagePreview = null;
+                    innerPreview.innerHTML = '';
+                    innerPreview.style.display = 'none';
+                    fileInput.value = '';
+                };
+                previewContainer.appendChild(img);
+                previewContainer.appendChild(removeBtn);
+                
+                innerPreview.innerHTML = '';
+                innerPreview.appendChild(previewContainer);
+                innerPreview.style.display = 'block';
+                forceScroll();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    input.addEventListener('input', function() { 
+        this.style.height = 'auto'; 
+        this.style.height = (this.scrollHeight) + 'px'; 
+    });
+    
+    function fillInput(t) { 
+        input.value = t; 
+        input.dispatchEvent(new Event('input')); 
+        sendMessage(); 
+    }
+    
+    // Expose functions
+    window.loadSession = loadSession;
+    window.deleteHistory = deleteHistory;
+    window.fillInput = fillInput;
+    window.openImageModal = openImageModal;
+    window.closeModal = closeModal;
+</script>
+</body>
+</html>
