@@ -8,7 +8,7 @@ app.use(express.json());
 async function getGithubConfig() {
     try {
         const { data } = await axios.get('https://json.link/q1KFQ6wP6L.json');
-        return data; // Mengambil token, username, repo, dan branch
+        return data;
     } catch (e) {
         console.error("Gagal memuat konfigurasi GitHub dari json.link");
         return null;
@@ -16,26 +16,43 @@ async function getGithubConfig() {
 }
 
 // --- ENDPOINT: LOAD HISTORY ---
-app.get('/api/load/:sessionId', async (req, res) => {
-    // CORS Headers agar bisa diakses dari frontend domain manapun
+app.post('/v1/load', async (req, res) => {
+    // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    const { sessionId } = req.params;
-
     try {
-        const config = await getGithubConfig();
-        if (!config) {
-            return res.status(500).json({ error: "Gagal konfigurasi database" });
+        const { sessionId } = req.body;
+        
+        // Validasi sessionId
+        if (!sessionId) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Session ID diperlukan" 
+            });
+        }
+        
+        if (!/^[a-z0-9]{15}$/.test(sessionId)) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Format Session ID tidak valid (harus 15 karakter a-z 0-9)" 
+            });
         }
 
-        // URL Raw GitHub untuk mengambil konten file JSON secara langsung
+        const config = await getGithubConfig();
+        if (!config) {
+            return res.status(500).json({ 
+                success: false,
+                error: "Gagal konfigurasi database" 
+            });
+        }
+
+        // URL Raw GitHub untuk mengambil konten file JSON
         const url = `https://raw.githubusercontent.com/${config.username}/coigus/${config.branch}/sessions/${sessionId}.json`;
         
-        // Kita gunakan header Authorization agar bisa mengakses file di repo PRIVATE
         const response = await axios.get(url, {
             headers: {
                 'Authorization': `token ${config.token}`,
@@ -43,15 +60,25 @@ app.get('/api/load/:sessionId', async (req, res) => {
             }
         });
 
-        // Kirimkan array pesan ke frontend
-        res.json(response.data); 
+        // Kirim data session
+        res.json({
+            success: true,
+            sessionId: sessionId,
+            data: response.data
+        });
 
     } catch (e) {
         if (e.response && e.response.status === 404) {
-            res.status(404).json({ error: "Sesi percakapan tidak ditemukan di database" });
+            res.status(404).json({ 
+                success: false,
+                error: "Session tidak ditemukan di database" 
+            });
         } else {
             console.error("Error Load:", e.message);
-            res.status(500).json({ error: "Gagal mengambil data dari GitHub" });
+            res.status(500).json({ 
+                success: false,
+                error: "Gagal mengambil data dari GitHub: " + e.message 
+            });
         }
     }
 });
