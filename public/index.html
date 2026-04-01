@@ -7,38 +7,38 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-    --bg-color: #ffffff;
-    --text-color: #1a1a1a;
-    --sidebar-bg: #f5f5f7;
-    --card-bg: #f0f0f2;
-    --border-color: #ddd;
-    --input-bg: #f0f0f2;
-    --icon-color: #555;
-    --theme-icon: #f59e0b;
-    --user-bubble: #e3f2fd;
-    --ai-bubble: #f1f1f1;
-    --shadow: rgba(0,0,0,0.05);
-    --accent-color: #8b8bff;
-    --code-bg: #f6f8fa;      /* Light mode: background abu-abu muda */
-    --code-text: #24292e;    /* Light mode: teks gelap */
-}
+            --bg-color: #ffffff;
+            --text-color: #1a1a1a;
+            --sidebar-bg: #f5f5f7;
+            --card-bg: #f0f0f2;
+            --border-color: #ddd;
+            --input-bg: #f0f0f2;
+            --icon-color: #555;
+            --theme-icon: #f59e0b;
+            --user-bubble: #e3f2fd;
+            --ai-bubble: #f1f1f1;
+            --shadow: rgba(0,0,0,0.05);
+            --accent-color: #8b8bff;
+            --code-bg: #f6f8fa;
+            --code-text: #24292e;
+        }
 
-[data-theme="dark"] {
-    --bg-color: #0a0a0a;
-    --text-color: white;
-    --sidebar-bg: #0f0f12;
-    --card-bg: #1e1e1e;
-    --border-color: #333;
-    --input-bg: #1e1e1e;
-    --icon-color: #888;
-    --theme-icon: #a78bfa;
-    --user-bubble: #0b3d91;
-    --ai-bubble: #262626;
-    --shadow: rgba(0,0,0,0.3);
-    --accent-color: #a78bfa;
-    --code-bg: #1e1e2e;      /* Dark mode: background gelap kebiruan */
-    --code-text: #e4e4e7;    /* Dark mode: teks terang */
-}
+        [data-theme="dark"] {
+            --bg-color: #0a0a0a;
+            --text-color: #e4e4e7;
+            --sidebar-bg: #0f0f12;
+            --card-bg: #1e1e1e;
+            --border-color: #333;
+            --input-bg: #1e1e1e;
+            --icon-color: #888;
+            --theme-icon: #a78bfa;
+            --user-bubble: #0b3d91;
+            --ai-bubble: #262626;
+            --shadow: rgba(0,0,0,0.3);
+            --accent-color: #a78bfa;
+            --code-bg: #1e1e2e;
+            --code-text: #e4e4e7;
+        }
 
         * {
             margin: 0; padding: 0;
@@ -200,430 +200,386 @@
         .user-bubble { align-self: flex-end; background-color: var(--user-bubble); border-bottom-right-radius: 4px; }
         .ai-bubble { align-self: flex-start; background-color: var(--ai-bubble); border-bottom-left-radius: 4px; }
 
-        /* MARKDOWN STYLES - VERSION PREMIUM */
-.ai-bubble .message-text {
-    word-wrap: break-word;
-    line-height: 1.6;
-    font-size: 15px;
-}
+        /* MARKDOWN STYLES - CLEAN VERSION (tanpa warna ungu nyolot) */
+        .ai-bubble .message-text {
+            word-wrap: break-word;
+            line-height: 1.6;
+            font-size: 15px;
+        }
 
-/* Custom list untuk format : (titik dua) */
-.ai-bubble .colon-list {
-    list-style-type: none;
-    padding-left: 0;
-    margin: 0.6em 0;
-}
+        /* Headings */
+        .ai-bubble h1 { 
+            font-size: 1.4em; 
+            margin: 0.8em 0 0.4em; 
+            font-weight: 600; 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 0.3em;
+        }
+        .ai-bubble h2 { 
+            font-size: 1.25em; 
+            margin: 0.7em 0 0.3em; 
+            font-weight: 600; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 0.2em;
+        }
+        .ai-bubble h3 { 
+            font-size: 1.15em; 
+            margin: 0.6em 0 0.2em; 
+            font-weight: 600; 
+        }
+        .ai-bubble h4 { 
+            font-size: 1.05em; 
+            margin: 0.5em 0 0.2em; 
+            font-weight: 600; 
+        }
+        .ai-bubble h5, .ai-bubble h6 { 
+            font-size: 1em; 
+            margin: 0.4em 0 0.2em; 
+            font-weight: 600; 
+        }
 
-.ai-bubble .colon-list li {
-    position: relative;
-    padding-left: 1.5em;
-    margin: 0.3em 0;
-    line-height: 1.5;
-}
+        /* Bold & Italic - WARNA HITAM/PUTIH, CUMA TEBAL */
+        .ai-bubble strong { 
+            font-weight: 700; 
+            color: var(--text-color);
+        }
+        .ai-bubble em { 
+            font-style: italic; 
+        }
 
-.ai-bubble .colon-list li::before {
-    content: "•";
-    color: var(--accent-color);
-    position: absolute;
-    left: 0;
-    font-weight: bold;
-    font-size: 1.2em;
-}
+        /* Lists */
+        .ai-bubble ul, .ai-bubble ol { 
+            margin: 0.6em 0; 
+            padding-left: 1.8em; 
+        }
+        .ai-bubble li { 
+            margin: 0.3em 0; 
+            line-height: 1.5;
+        }
+        .ai-bubble ul { 
+            list-style-type: disc; 
+        }
+        .ai-bubble ol { 
+            list-style-type: decimal; 
+        }
+        .ai-bubble ul ul, .ai-bubble ol ul {
+            list-style-type: circle;
+            margin: 0.2em 0;
+        }
 
-/* Headings - Ukuran SAMA KAYAK TEKS BIASA (1em = 15px) */
-.ai-bubble h1 { 
-    font-size: 1.1em; 
-    margin: 0.8em 0 0.4em; 
-    font-weight: 600; 
-    border-bottom: 2px solid var(--accent-color); 
-    padding-bottom: 0.3em;
-    letter-spacing: -0.01em;
-}
-.ai-bubble h2 { 
-    font-size: 1.05em; 
-    margin: 0.7em 0 0.3em; 
-    font-weight: 600; 
-    border-bottom: 1px solid var(--border-color); 
-    padding-bottom: 0.2em;
-}
-.ai-bubble h3 { 
-    font-size: 1em; 
-    margin: 0.6em 0 0.2em; 
-    font-weight: 600; 
-}
-.ai-bubble h4 { 
-    font-size: 0.95em; 
-    margin: 0.5em 0 0.2em; 
-    font-weight: 600; 
-}
-.ai-bubble h5, .ai-bubble h6 { 
-    font-size: 0.9em; 
-    margin: 0.4em 0 0.2em; 
-    font-weight: 600; 
-}
+        /* Blockquote - Simple */
+        .ai-bubble blockquote {
+            border-left: 4px solid var(--border-color);
+            margin: 0.8em 0;
+            padding: 0.6em 1em;
+            background: rgba(128, 128, 128, 0.05);
+            border-radius: 0 12px 12px 0;
+            font-style: normal;
+            color: var(--text-color);
+        }
 
-/* Bold & Italic */
-.ai-bubble strong { 
-    font-weight: 700; 
-    color: var(--accent-color); 
-}
-.ai-bubble em { 
-    font-style: italic; 
-}
+        /* TABEL - SIMPLE & CLEAN */
+        .ai-bubble table {
+            border-collapse: collapse;
+            margin: 1em 0;
+            width: 100%;
+            overflow-x: auto;
+            display: block;
+            border-radius: 12px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+        }
 
-/* Lists - Rapi dan Berjarak */
-.ai-bubble ul, .ai-bubble ol { 
-    margin: 0.6em 0; 
-    padding-left: 1.8em; 
-}
-.ai-bubble li { 
-    margin: 0.3em 0; 
-    line-height: 1.5;
-}
-.ai-bubble ul { 
-    list-style-type: disc; 
-}
-.ai-bubble ol { 
-    list-style-type: decimal; 
-}
-.ai-bubble ul ul, .ai-bubble ol ul {
-    list-style-type: circle;
-    margin: 0.2em 0;
-}
+        .ai-bubble th, .ai-bubble td {
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            text-align: left;
+            vertical-align: top;
+        }
 
-/* Blockquote - Kayak ChatGPT */
-.ai-bubble blockquote {
-    border-left: 4px solid var(--accent-color);
-    margin: 0.8em 0;
-    padding: 0.6em 1em;
-    background: rgba(139, 139, 255, 0.08);
-    border-radius: 0 12px 12px 0;
-    font-style: normal;
-    color: var(--text-color);
-    opacity: 0.9;
-}
+        .ai-bubble th {
+            background: rgba(128, 128, 128, 0.1);
+            font-weight: 600;
+            color: var(--text-color);
+        }
 
-/* TABEL - KAYAK GEMINI/DEEPSEEK (FIXED) */
-.ai-bubble table {
-    border-collapse: collapse;
-    margin: 1em 0;
-    width: 100%;
-    overflow-x: auto;
-    display: block;
-    border-radius: 12px;
-    font-size: 14px;
-    border: 1px solid var(--border-color);
-}
+        /* Alternating row colors - tipis aja */
+        .ai-bubble tbody tr:nth-child(even) {
+            background: rgba(128, 128, 128, 0.05);
+        }
 
-.ai-bubble table thead {
-    background: rgba(139, 139, 255, 0.15);
-}
+        .ai-bubble tbody tr:hover {
+            background: rgba(128, 128, 128, 0.08);
+            transition: background 0.2s;
+        }
 
-.ai-bubble th, .ai-bubble td {
-    border: 1px solid var(--border-color);
-    padding: 10px 14px;
-    text-align: left;
-    vertical-align: top;
-}
+        /* Code Block */
+        .ai-bubble pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 1em;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 1em 0;
+            position: relative;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid var(--border-color);
+        }
 
-.ai-bubble th {
-    background: rgba(139, 139, 255, 0.2);
-    font-weight: 600;
-    color: var(--accent-color);
-}
+        .ai-bubble code {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
 
-/* Alternating row colors untuk tabel */
-.ai-bubble tbody tr:nth-child(even) {
-    background: rgba(139, 139, 255, 0.05);
-}
+        /* Inline code - background tipis, teks normal */
+        .ai-bubble :not(pre) > code {
+            background: rgba(128, 128, 128, 0.12);
+            padding: 0.2em 0.5em;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: var(--text-color);
+            font-weight: 500;
+        }
 
-.ai-bubble tbody tr:hover {
-    background: rgba(139, 139, 255, 0.1);
-    transition: background 0.2s;
-}
+        /* Code block wrapper */
+        .code-block-wrapper {
+            position: relative;
+            margin: 1em 0;
+        }
 
-/* Code Block - Modern Style */
-.ai-bubble pre {
-    background: var(--code-bg);
-    color: var(--code-text);
-    padding: 1em;
-    border-radius: 12px;
-    overflow-x: auto;
-    margin: 1em 0;
-    position: relative;
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    border: 1px solid var(--border-color);
-}
+        .code-block-wrapper pre {
+            margin: 0;
+            padding-right: 70px;
+        }
 
-.ai-bubble code {
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 0.9em;
-}
+        .code-copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(100, 100, 100, 0.2);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
 
-/* Inline code - Soft Background */
-.ai-bubble :not(pre) > code {
-    background: rgba(139, 139, 255, 0.12);
-    padding: 0.2em 0.5em;
-    border-radius: 6px;
-    font-size: 0.85em;
-    color: var(--accent-color);
-    font-weight: 500;
-}
+        .code-copy-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
 
-/* Code block wrapper dengan tombol copy */
-.code-block-wrapper {
-    position: relative;
-    margin: 1em 0;
-}
+        /* Horizontal rule */
+        .ai-bubble hr {
+            border: none;
+            border-top: 2px solid var(--border-color);
+            margin: 1.5em 0;
+            background: none;
+        }
 
-.code-block-wrapper pre {
-    margin: 0;
-    padding-right: 70px;
-}
+        /* Links */
+        .ai-bubble a {
+            color: var(--accent-color);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
 
-.code-copy-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(100, 100, 100, 0.3);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: var(--text-color);
-    padding: 5px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: monospace;
-    transition: all 0.2s;
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+        .ai-bubble a:hover {
+            border-bottom-color: var(--accent-color);
+        }
 
-.code-copy-btn:hover {
-    background: var(--accent-color);
-    color: white;
-    border-color: var(--accent-color);
-}
+        /* Images */
+        .ai-bubble img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 0.8em 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
 
-/* Horizontal rule */
-.ai-bubble hr {
-    border: none;
-    border-top: 2px solid var(--border-color);
-    margin: 1.5em 0;
-    background: none;
-}
+        .typing-dots {
+            display: flex;
+            gap: 6px;
+            padding: 8px 0;
+            align-items: center;
+        }
 
-/* Links */
-.ai-bubble a {
-    color: var(--accent-color);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s;
-}
+        .typing-dots .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--icon-color);
+            border-radius: 50%;
+            animation: typingBounce 1.2s infinite ease-in-out;
+        }
 
-.ai-bubble a:hover {
-    border-bottom-color: var(--accent-color);
-}
+        .typing-dots .dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
 
-/* Images */
-.ai-bubble img {
-    max-width: 100%;
-    border-radius: 12px;
-    margin: 0.8em 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
 
-/* Paragraph spacing */
-.ai-bubble p {
-    margin: 0.6em 0;
-}
+        .copy-btn { 
+            position: absolute; 
+            bottom: 8px; 
+            left: 16px; 
+            font-size: 11px; 
+            cursor: pointer; 
+            opacity: 0.6; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+        }
 
-/* Small text */
-.ai-bubble small {
-    font-size: 0.85em;
-    opacity: 0.8;
-}
+        .copy-btn:hover { opacity: 1; }
 
-.typing-dots {
-    display: flex;
-    gap: 6px;
-    padding: 8px 0;
-    align-items: center;
-}
+        .chat-image-container {
+            margin-top: 8px;
+            position: relative;
+            display: inline-block;
+            width: 200px;
+            height: 200px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--card-bg);
+            cursor: pointer;
+        }
 
-.typing-dots .dot {
-    width: 8px;
-    height: 8px;
-    background: var(--icon-color);
-    border-radius: 50%;
-    animation: typingBounce 1.2s infinite ease-in-out;
-}
+        .chat-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.2s;
+        }
 
-.typing-dots .dot:nth-child(1) { animation-delay: 0s; }
-.typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+        .chat-image:hover {
+            transform: scale(1.02);
+        }
 
-@keyframes typingBounce {
-    0%, 60%, 100% {
-        transform: translateY(0);
-        opacity: 0.4;
-    }
-    30% {
-        transform: translateY(-8px);
-        opacity: 1;
-    }
-}
+        .message-with-image {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
 
-.copy-btn { 
-    position: absolute; 
-    bottom: 8px; 
-    left: 16px; 
-    font-size: 11px; 
-    cursor: pointer; 
-    opacity: 0.6; 
-    display: flex; 
-    align-items: center; 
-    gap: 5px; 
-}
+        .image-preview-container {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            overflow: visible;
+            background: var(--card-bg);
+            margin-bottom: 8px;
+            display: inline-block;
+            border: 2px solid var(--accent-color);
+        }
 
-.copy-btn:hover { opacity: 1; }
+        .image-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
 
-.chat-image-container {
-    margin-top: 8px;
-    position: relative;
-    display: inline-block;
-    width: 200px;
-    height: 200px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: var(--card-bg);
-    cursor: pointer;
-}
+        .remove-img-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #ff4d4d;
+            color: white;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid var(--bg-color);
+            z-index: 20;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s, background 0.2s;
+        }
 
-.chat-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.2s;
-}
+        .remove-img-btn:hover {
+            transform: scale(1.1);
+            background: #ff3333;
+        }
 
-.chat-image:hover {
-    transform: scale(1.02);
-}
+        .preview-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-.message-with-image {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
+        footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
+        .input-box { width: 100%; max-width: 500px; margin: 0 auto; background: var(--input-bg); border-radius: 24px; padding: 8px 16px; border: 1px solid var(--border-color); }
+        .input-row { display: flex; align-items: flex-end; gap: 12px; width: 100%; }
 
-.image-preview-container {
-    position: relative;
-    width: 70px;
-    height: 70px;
-    border-radius: 12px;
-    overflow: visible;
-    background: var(--card-bg);
-    margin-bottom: 8px;
-    display: inline-block;
-    border: 2px solid var(--accent-color);
-}
+        textarea {
+            background: transparent; border: none; outline: none; color: var(--text-color); 
+            flex: 1; font-size: 16px; padding: 10px 0; resize: none; max-height: 150px;
+            line-height: 1.5; overflow-y: auto;
+        }
 
-.image-preview-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 10px;
-}
+        .icon-btn { 
+            color: var(--icon-color); 
+            cursor: pointer; 
+            font-size: 18px; 
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
 
-.remove-img-btn {
-    position: absolute;
-    top: -12px;
-    right: -12px;
-    background: #ff4d4d;
-    color: white;
-    border-radius: 50%;
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    border: 2px solid var(--bg-color);
-    z-index: 20;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    transition: transform 0.2s, background 0.2s;
-}
+        .icon-btn:hover {
+            transform: scale(1.05);
+        }
 
-.remove-img-btn:hover {
-    transform: scale(1.1);
-    background: #ff3333;
-}
+        .send-btn-active {
+            color: var(--accent-color) !important;
+        }
 
-.preview-area {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
+        .stop-btn {
+            color: #ff4d4d !important;
+        }
 
-footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
-.input-box { width: 100%; max-width: 500px; margin: 0 auto; background: var(--input-bg); border-radius: 24px; padding: 8px 16px; border: 1px solid var(--border-color); }
-.input-row { display: flex; align-items: flex-end; gap: 12px; width: 100%; }
+        #inner-preview { display: none; }
 
-textarea {
-    background: transparent; border: none; outline: none; color: var(--text-color); 
-    flex: 1; font-size: 16px; padding: 10px 0; resize: none; max-height: 150px;
-    line-height: 1.5; overflow-y: auto;
-}
-
-.icon-btn { 
-    color: var(--icon-color); 
-    cursor: pointer; 
-    font-size: 18px; 
-    margin-bottom: 10px;
-    transition: transform 0.2s;
-}
-
-.icon-btn:hover {
-    transform: scale(1.05);
-}
-
-.send-btn-active {
-    color: var(--accent-color) !important;
-}
-
-.stop-btn {
-    color: #ff4d4d !important;
-}
-
-#inner-preview { display: none; }
-
-.image-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.95);
-    z-index: 10000;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
-.image-modal img {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
-    border-radius: 8px;
-}
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -696,122 +652,122 @@ textarea {
 
 <script>
     // ============ MARKDOWN RENDERER ============
-    // ============ MARKDOWN RENDERER ============
+    function escapeHtmlSimple(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
-function parseMarkdown(text) {
-    if (!text) return '';
-    
-    let html = text;
-    
-    // Bersihin tabel kosong & list dengan *
-    html = html.replace(/\n?\|[\s\|]*\|\n?/g, '\n');
-    html = html.replace(/\n?\|[-:\| ]+\|\n?/g, '\n');
-    html = html.replace(/^\* /gm, '- ');
-    
-    // 1. Code blocks
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-        const language = lang || 'plaintext';
-        const escapedCode = escapeHtmlSimple(code.trim());
-        return `<div class="code-block-wrapper"><pre><code class="language-${language}">${escapedCode}</code></pre><button class="code-copy-btn" onclick="copyCodeBlock(this)"><i class="fa-regular fa-copy"></i> Salin</button></div>`;
-    });
-    
-    // 2. Inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    // 3. Bold
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // 4. Italic
-    html = html.replace(/(?<!-) \*([^*]+)\*/g, '<em>$1</em>');
-    
-    // 5. Headings
-    html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-    html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-    html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-    
-    // 6. Blockquote
-    html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
-    
-    // 7. Unordered lists
-    let ulMatch = html.match(/(?:^- (.*$)\n?)+/gm);
-    if (ulMatch) {
-        ulMatch.forEach(match => {
-            const items = match.match(/^- (.*$)/gm).map(item => `<li>${item.replace(/^- /, '')}</li>`).join('');
-            html = html.replace(match, `<ul>${items}</ul>`);
+    function parseMarkdown(text) {
+        if (!text) return '';
+        
+        let html = text;
+        
+        // Bersihin tabel kosong & list dengan *
+        html = html.replace(/\n?\|[\s\|]*\|\n?/g, '\n');
+        html = html.replace(/\n?\|[-:\| ]+\|\n?/g, '\n');
+        html = html.replace(/^\* /gm, '- ');
+        
+        // 1. Code blocks
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+            const language = lang || 'plaintext';
+            const escapedCode = escapeHtmlSimple(code.trim());
+            return `<div class="code-block-wrapper"><pre><code class="language-${language}">${escapedCode}</code></pre><button class="code-copy-btn" onclick="copyCodeBlock(this)"><i class="fa-regular fa-copy"></i> Salin</button></div>`;
+        });
+        
+        // 2. Inline code
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        // 3. Bold
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // 4. Italic
+        html = html.replace(/(?<!-) \*([^*]+)\*/g, '<em>$1</em>');
+        
+        // 5. Headings
+        html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+        
+        // 6. Blockquote
+        html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+        
+        // 7. Unordered lists
+        let ulMatch = html.match(/(?:^- (.*$)\n?)+/gm);
+        if (ulMatch) {
+            ulMatch.forEach(match => {
+                const items = match.match(/^- (.*$)/gm).map(item => `<li>${item.replace(/^- /, '')}</li>`).join('');
+                html = html.replace(match, `<ul>${items}</ul>`);
+            });
+        }
+        
+        // 8. Ordered lists
+        let olMatch = html.match(/(?:^\d+\. (.*$)\n?)+/gm);
+        if (olMatch) {
+            olMatch.forEach(match => {
+                const items = match.match(/^\d+\. (.*$)/gm).map(item => `<li>${item.replace(/^\d+\. /, '')}</li>`).join('');
+                html = html.replace(match, `<ol>${items}</ol>`);
+            });
+        }
+        
+        // 9. Links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        
+        // 10. Images
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+        
+        // 11. Tables - FIXED
+        const tableRegex = /\n(\|?.+\|?)\n(\|?[-:\| ]+\|?)\n((?:\|?.+\|?\n?)+)/g;
+        html = html.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
+            let cleanHeader = headerRow.replace(/^\|/, '').replace(/\|$/, '');
+            const headers = cleanHeader.split('|').map(cell => cell.trim()).filter(cell => cell);
+            if (headers.length === 0) return '';
+            
+            const headerHtml = `<thead>\\n${headers.map(h => `<th>${h}</th>`).join('')}\\n</thead>`;
+            
+            const rows = bodyRows.trim().split('\n');
+            const bodyHtml = rows.map(row => {
+                let cleanRow = row.replace(/^\|/, '').replace(/\|$/, '');
+                const cells = cleanRow.split('|').map(cell => cell.trim()).filter(cell => cell);
+                if (cells.length === 0) return '';
+                return ` <tr>\\n${cells.map(c => `<td>${c}觅`).join('')}\\n</tr>`;
+            }).join('');
+            
+            if (bodyHtml === '') return '';
+            
+            return `<table>\\n${headerHtml}<tbody>\\n${bodyHtml}\\n</tbody>\\n</table>`;
+        });
+        
+        // 12. Horizontal rule
+        html = html.replace(/^---$/gm, '<hr>');
+        
+        // 13. Newlines to <br>
+        html = html.replace(/\n/g, '<br>');
+        
+        // 14. Cleanup
+        html = html.replace(/<br>\s*<(ul|ol|table|blockquote|h1|h2|h3|pre)/g, '<$1');
+        html = html.replace(/<\/(ul|ol|table|blockquote|h1|h2|h3|pre)><br>/g, '</$1>');
+        
+        return html;
+    }
+
+    function copyCodeBlock(btn) {
+        const pre = btn.parentElement.querySelector('pre code');
+        const code = pre ? pre.innerText : '';
+        navigator.clipboard.writeText(code).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Tersalin!';
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 2000);
         });
     }
-    
-    // 8. Ordered lists
-    let olMatch = html.match(/(?:^\d+\. (.*$)\n?)+/gm);
-    if (olMatch) {
-        olMatch.forEach(match => {
-            const items = match.match(/^\d+\. (.*$)/gm).map(item => `<li>${item.replace(/^\d+\. /, '')}</li>`).join('');
-            html = html.replace(match, `<ol>${items}</ol>`);
-        });
+
+    function formatAiResponse(text) {
+        if (!text) return "";
+        return parseMarkdown(text);
     }
-    
-    // 9. Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    
-    // 10. Images
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
-    
-    // 11. TABEL - FIXED (support format tanpa | di pemisah)
-    const tableRegex = /\n(\|?.+\|?)\n(\|?[-:\| ]+\|?)\n((?:\|?.+\|?\n?)+)/g;
-    html = html.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
-        // Bersihin header
-        let cleanHeader = headerRow.replace(/^\|/, '').replace(/\|$/, '');
-        const headers = cleanHeader.split('|').map(cell => cell.trim()).filter(cell => cell);
-        if (headers.length === 0) return '';
-        
-        const headerHtml = `<thead>\\n${headers.map(h => `<th>${h}</th>`).join('')}\\n</thead>`;
-        
-        // Bersihin body rows
-        const rows = bodyRows.trim().split('\n');
-        const bodyHtml = rows.map(row => {
-            let cleanRow = row.replace(/^\|/, '').replace(/\|$/, '');
-            const cells = cleanRow.split('|').map(cell => cell.trim()).filter(cell => cell);
-            if (cells.length === 0) return '';
-            return ` <tr>\\n${cells.map(c => `<td>${c}</td>`).join('')}\\n</tr>`;
-        }).join('');
-        
-        if (bodyHtml === '') return '';
-        
-        return `<table>\\n${headerHtml}<tbody>\\n${bodyHtml}\\n</tbody>\\n</table>`;
-    });
-    
-    // 12. Horizontal rule
-    html = html.replace(/^---$/gm, '<hr>');
-    
-    // 13. Newlines to <br>
-    html = html.replace(/\n/g, '<br>');
-    
-    // 14. Cleanup
-    html = html.replace(/<br>\s*<(ul|ol|table|blockquote|h1|h2|h3|pre)/g, '<$1');
-    html = html.replace(/<\/(ul|ol|table|blockquote|h1|h2|h3|pre)><br>/g, '</$1>');
-    
-    return html;
-}
-
-function copyCodeBlock(btn) {
-    const pre = btn.parentElement.querySelector('pre code');
-    const code = pre ? pre.innerText : '';
-    navigator.clipboard.writeText(code).then(() => {
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Tersalin!';
-        setTimeout(() => {
-            btn.innerHTML = originalHtml;
-        }, 2000);
-    });
-}
-
-// GANTI fungsi formatAiResponse yang lama dengan yang ini
-function formatAiResponse(text) {
-    if (!text) return "";
-    // Parse markdown ke HTML
-    return parseMarkdown(text);
-}
-// ============ END MARKDOWN RENDERER ============
+    // ============ END MARKDOWN RENDERER ============
     
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
@@ -833,7 +789,6 @@ function formatAiResponse(text) {
     let currentAbortController = null;
     let isGenerating = false;
     
-    // Upload gambar
     async function uploadImageToUrl(imageFile) {
         const formData = new FormData();
         formData.append('file', imageFile);
@@ -854,7 +809,6 @@ function formatAiResponse(text) {
         }
     }
     
-    // Create session
     async function createNewSession() {
         try {
             const response = await fetch('https://bai-rho.vercel.app/v1/session/create', {
@@ -1017,12 +971,6 @@ function formatAiResponse(text) {
             `;
             historyList.appendChild(div);
         });
-    }
-    
-    function escapeHtmlSimple(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
     
     function deleteHistory(event, sessionId, index) {
@@ -1243,7 +1191,6 @@ function formatAiResponse(text) {
         }
     }
     
-    // INITIALIZATION
     window.onload = async () => {
         const pathId = window.location.pathname.split('/')[1];
         
