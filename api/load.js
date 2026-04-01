@@ -15,12 +15,17 @@ async function getGithubConfig() {
     }
 }
 
-// --- ENDPOINT: LOAD HISTORY ---
+// --- ENDPOINT: LOAD HISTORY (LANGSUNG KE GITHUB API) ---
 app.post('/v1/session/check', async (req, res) => {
     // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Anti-cache headers
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -50,21 +55,32 @@ app.post('/v1/session/check', async (req, res) => {
             });
         }
 
-        // URL Raw GitHub untuk mengambil konten file JSON
-        const url = `https://raw.githubusercontent.com/${config.username}/session-ai/${config.branch}/${sessionId}.json`;
+        // Pake GitHub API (bukan raw) dengan timestamp biar ga kena cache
+        const path = `${sessionId}.json`;
+        const url = `https://api.github.com/repos/${config.username}/session-ai/contents/${path}`;
         
         const response = await axios.get(url, {
             headers: {
                 'Authorization': `token ${config.token}`,
-                'Accept': 'application/vnd.github.v3.raw'
+                'Accept': 'application/vnd.github.v3+json',
+                'If-None-Match': '', // Force fresh request
+                'Cache-Control': 'no-cache'
+            },
+            params: {
+                ref: config.branch || 'main',
+                t: Date.now() // Force unique request
             }
         });
+
+        // Decode content dari base64
+        const content = Buffer.from(response.data.content, 'base64').toString();
+        const sessionData = JSON.parse(content);
 
         // Kirim data session
         res.json({
             success: true,
             sessionId: sessionId,
-            data: response.data
+            data: sessionData
         });
 
     } catch (e) {
