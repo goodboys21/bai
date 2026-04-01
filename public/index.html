@@ -697,47 +697,42 @@ textarea {
 <script>
     // ============ MARKDOWN RENDERER ============
     // ============ MARKDOWN RENDERER ============
+
 function parseMarkdown(text) {
     if (!text) return '';
     
     let html = text;
     
-    // ============ TAMBAHAN: HAPUS TABEL KOSONG & LIST DENGAN * ============
-    // Hapus tabel kosong yang cuma berisi | dan spasi
+    // Bersihin tabel kosong & list dengan *
     html = html.replace(/\n?\|[\s\|]*\|\n?/g, '\n');
-    // Hapus baris pemisah tabel yang kosong (|---|)
     html = html.replace(/\n?\|[-:\| ]+\|\n?/g, '\n');
-    
-    // Ubah list dengan * (bintang) jadi - (strip) biar bisa di-handle
     html = html.replace(/^\* /gm, '- ');
-    // ============ END TAMBAHAN ============
     
-    // 1. Handle code blocks (``` ... ```) - HARUS PERTAMA
+    // 1. Code blocks
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
         const language = lang || 'plaintext';
         const escapedCode = escapeHtmlSimple(code.trim());
         return `<div class="code-block-wrapper"><pre><code class="language-${language}">${escapedCode}</code></pre><button class="code-copy-btn" onclick="copyCodeBlock(this)"><i class="fa-regular fa-copy"></i> Salin</button></div>`;
     });
     
-    // 2. Handle inline code (`code`)
+    // 2. Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
     
-    // 3. Handle bold (**text**)
+    // 3. Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
-    // 4. Handle italic (*text*) - TAPI HATI-HATI JANGAN KENA LIST
-    // Kita handle italic tapi skip yang udah jadi list
+    // 4. Italic
     html = html.replace(/(?<!-) \*([^*]+)\*/g, '<em>$1</em>');
     
-    // 5. Handle headings
+    // 5. Headings
     html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
     html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
     
-    // 6. Handle blockquote
+    // 6. Blockquote
     html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
     
-    // 7. Handle unordered lists (sekarang udah pake - karena * udah diganti)
+    // 7. Unordered lists
     let ulMatch = html.match(/(?:^- (.*$)\n?)+/gm);
     if (ulMatch) {
         ulMatch.forEach(match => {
@@ -746,7 +741,7 @@ function parseMarkdown(text) {
         });
     }
     
-    // 8. Handle ordered lists
+    // 8. Ordered lists
     let olMatch = html.match(/(?:^\d+\. (.*$)\n?)+/gm);
     if (olMatch) {
         olMatch.forEach(match => {
@@ -755,42 +750,43 @@ function parseMarkdown(text) {
         });
     }
     
-    // 9. Handle links
+    // 9. Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     
-    // 10. Handle images
+    // 10. Images
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
     
-    // 11. Handle tables - FIXED (biar ga kosong)
-    // Deteksi tabel dengan format | A | B | dan baris pemisah |---|---|
-    const tableRegex = /\n(\|.+\|)\n(\|[-:\| ]+\|)\n((?:\|.+\|\n?)+)/g;
+    // 11. TABEL - FIXED (support format tanpa | di pemisah)
+    const tableRegex = /\n(\|?.+\|?)\n(\|?[-:\| ]+\|?)\n((?:\|?.+\|?\n?)+)/g;
     html = html.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
-        // Parse header
-        const headers = headerRow.split('|').filter(cell => cell.trim()).map(cell => `<th>${cell.trim()}</th>`);
+        // Bersihin header
+        let cleanHeader = headerRow.replace(/^\|/, '').replace(/\|$/, '');
+        const headers = cleanHeader.split('|').map(cell => cell.trim()).filter(cell => cell);
         if (headers.length === 0) return '';
         
-        const headerHtml = `<thead>\\n${headers.join('')}\\n</thead>`;
+        const headerHtml = `<thead>\\n${headers.map(h => `<th>${h}</th>`).join('')}\\n</thead>`;
         
-        // Parse body
-        const rows = bodyRows.trim().split('\n').filter(row => row.trim());
+        // Bersihin body rows
+        const rows = bodyRows.trim().split('\n');
         const bodyHtml = rows.map(row => {
-            const cells = row.split('|').filter(cell => cell.trim()).map(cell => `<td>${cell.trim()}觅`);
+            let cleanRow = row.replace(/^\|/, '').replace(/\|$/, '');
+            const cells = cleanRow.split('|').map(cell => cell.trim()).filter(cell => cell);
             if (cells.length === 0) return '';
-            return `<tr>\\n${cells.join('')}\\n</tr>`;
+            return ` <tr>\\n${cells.map(c => `<td>${c}</td>`).join('')}\\n</tr>`;
         }).join('');
         
         if (bodyHtml === '') return '';
         
-        return ` <table>\\n${headerHtml}<tbody>\\n${bodyHtml}\\n</tbody>\\n</table>`;
+        return `<table>\\n${headerHtml}<tbody>\\n${bodyHtml}\\n</tbody>\\n</table>`;
     });
     
-    // 12. Handle horizontal rule
+    // 12. Horizontal rule
     html = html.replace(/^---$/gm, '<hr>');
     
-    // 13. Handle newlines to <br>
+    // 13. Newlines to <br>
     html = html.replace(/\n/g, '<br>');
     
-    // 14. Cleanup: hapus <br> di sekitar tag
+    // 14. Cleanup
     html = html.replace(/<br>\s*<(ul|ol|table|blockquote|h1|h2|h3|pre)/g, '<$1');
     html = html.replace(/<\/(ul|ol|table|blockquote|h1|h2|h3|pre)><br>/g, '</$1>');
     
