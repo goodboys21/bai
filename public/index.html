@@ -200,208 +200,195 @@
         .user-bubble { align-self: flex-end; background-color: var(--user-bubble); border-bottom-right-radius: 4px; }
         .ai-bubble { align-self: flex-start; background-color: var(--ai-bubble); border-bottom-left-radius: 4px; }
 
-        /* MARKDOWN STYLES - CLEAN VERSION (tanpa warna ungu nyolot) */
-        .ai-bubble .message-text {
-            word-wrap: break-word;
-            line-height: 1.6;
-            font-size: 15px;
-        }
+        /* MARKDOWN STYLES - CLEAN VERSION (TANPA BACKGROUND ABU) */
+.ai-bubble .message-text {
+    word-wrap: break-word;
+    line-height: 1.6;
+    font-size: 15px;
+}
 
-        /* Headings */
-        .ai-bubble h1 { 
-            font-size: 1.4em; 
-            margin: 0.8em 0 0.4em; 
-            font-weight: 600; 
-            border-bottom: 2px solid var(--border-color); 
-            padding-bottom: 0.3em;
-        }
-        .ai-bubble h2 { 
-            font-size: 1.25em; 
-            margin: 0.7em 0 0.3em; 
-            font-weight: 600; 
-            border-bottom: 1px solid var(--border-color); 
-            padding-bottom: 0.2em;
-        }
-        .ai-bubble h3 { 
-            font-size: 1.15em; 
-            margin: 0.6em 0 0.2em; 
-            font-weight: 600; 
-        }
-        .ai-bubble h4 { 
-            font-size: 1.05em; 
-            margin: 0.5em 0 0.2em; 
-            font-weight: 600; 
-        }
-        .ai-bubble h5, .ai-bubble h6 { 
-            font-size: 1em; 
-            margin: 0.4em 0 0.2em; 
-            font-weight: 600; 
-        }
+/* Headings */
+.ai-bubble h1 { 
+    font-size: 1.4em; 
+    margin: 0.8em 0 0.4em; 
+    font-weight: 600; 
+    border-bottom: 2px solid var(--border-color); 
+    padding-bottom: 0.3em;
+}
+.ai-bubble h2 { 
+    font-size: 1.25em; 
+    margin: 0.7em 0 0.3em; 
+    font-weight: 600; 
+    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 0.2em;
+}
+.ai-bubble h3 { 
+    font-size: 1.15em; 
+    margin: 0.6em 0 0.2em; 
+    font-weight: 600; 
+}
+.ai-bubble h4 { 
+    font-size: 1.05em; 
+    margin: 0.5em 0 0.2em; 
+    font-weight: 600; 
+}
+.ai-bubble h5, .ai-bubble h6 { 
+    font-size: 1em; 
+    margin: 0.4em 0 0.2em; 
+    font-weight: 600; 
+}
 
-        /* Bold & Italic - WARNA HITAM/PUTIH, CUMA TEBAL */
-        .ai-bubble strong { 
-            font-weight: 700; 
-            color: var(--text-color);
-        }
-        .ai-bubble em { 
-            font-style: italic; 
-        }
+/* Bold & Italic */
+.ai-bubble strong { 
+    font-weight: 700; 
+    color: var(--text-color);
+}
+.ai-bubble em { 
+    font-style: italic; 
+}
 
-        /* Lists */
-        .ai-bubble ul, .ai-bubble ol { 
-            margin: 0.6em 0; 
-            padding-left: 1.8em; 
-        }
-        .ai-bubble li { 
-            margin: 0.3em 0; 
-            line-height: 1.5;
-        }
-        .ai-bubble ul { 
-            list-style-type: disc; 
-        }
-        .ai-bubble ol { 
-            list-style-type: decimal; 
-        }
-        .ai-bubble ul ul, .ai-bubble ol ul {
-            list-style-type: circle;
-            margin: 0.2em 0;
-        }
+/* Lists */
+.ai-bubble ul, .ai-bubble ol { 
+    margin: 0.6em 0; 
+    padding-left: 1.8em; 
+}
+.ai-bubble li { 
+    margin: 0.3em 0; 
+    line-height: 1.5;
+}
+.ai-bubble ul { 
+    list-style-type: disc; 
+}
+.ai-bubble ol { 
+    list-style-type: decimal; 
+}
+.ai-bubble ul ul, .ai-bubble ol ul {
+    list-style-type: circle;
+    margin: 0.2em 0;
+}
 
-        /* Blockquote - Simple */
-        .ai-bubble blockquote {
-            border-left: 4px solid var(--border-color);
-            margin: 0.8em 0;
-            padding: 0.6em 1em;
-            background: rgba(128, 128, 128, 0.05);
-            border-radius: 0 12px 12px 0;
-            font-style: normal;
-            color: var(--text-color);
-        }
+/* Blockquote - TANPA BACKGROUND */
+.ai-bubble blockquote {
+    border-left: 4px solid var(--border-color);
+    margin: 0.8em 0;
+    padding: 0.6em 1em;
+    border-radius: 0 12px 12px 0;
+    font-style: normal;
+    color: var(--text-color);
+}
 
-        /* TABEL - SIMPLE & CLEAN */
-        .ai-bubble table {
-            border-collapse: collapse;
-            margin: 1em 0;
-            width: 100%;
-            overflow-x: auto;
-            display: block;
-            border-radius: 12px;
-            font-size: 14px;
-            border: 1px solid var(--border-color);
-        }
+/* TABEL - CLEAN TANPA BACKGROUND */
+.ai-bubble table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+    border-radius: 12px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+}
 
-        .ai-bubble th, .ai-bubble td {
-            border: 1px solid var(--border-color);
-            padding: 10px 14px;
-            text-align: left;
-            vertical-align: top;
-        }
+.ai-bubble th, .ai-bubble td {
+    border: 1px solid var(--border-color);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
 
-        .ai-bubble th {
-            background: rgba(128, 128, 128, 0.1);
-            font-weight: 600;
-            color: var(--text-color);
-        }
+.ai-bubble th {
+    font-weight: 600;
+    color: var(--text-color);
+}
 
-        /* Alternating row colors - tipis aja */
-        .ai-bubble tbody tr:nth-child(even) {
-            background: rgba(128, 128, 128, 0.05);
-        }
+/* Code Block */
+.ai-bubble pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1em;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 1em 0;
+    position: relative;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--border-color);
+}
 
-        .ai-bubble tbody tr:hover {
-            background: rgba(128, 128, 128, 0.08);
-            transition: background 0.2s;
-        }
+.ai-bubble code {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
 
-        /* Code Block */
-        .ai-bubble pre {
-            background: var(--code-bg);
-            color: var(--code-text);
-            padding: 1em;
-            border-radius: 12px;
-            overflow-x: auto;
-            margin: 1em 0;
-            position: relative;
-            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            border: 1px solid var(--border-color);
-        }
+/* Inline code - TANPA BACKGROUND */
+.ai-bubble :not(pre) > code {
+    padding: 0.2em 0.5em;
+    border-radius: 6px;
+    font-size: 0.85em;
+    color: var(--text-color);
+    font-weight: 500;
+}
 
-        .ai-bubble code {
-            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 0.9em;
-        }
+/* Code block wrapper */
+.code-block-wrapper {
+    position: relative;
+    margin: 1em 0;
+}
 
-        /* Inline code - background tipis, teks normal */
-        .ai-bubble :not(pre) > code {
-            background: rgba(128, 128, 128, 0.12);
-            padding: 0.2em 0.5em;
-            border-radius: 6px;
-            font-size: 0.85em;
-            color: var(--text-color);
-            font-weight: 500;
-        }
+.code-block-wrapper pre {
+    margin: 0;
+    padding-right: 70px;
+}
 
-        /* Code block wrapper */
-        .code-block-wrapper {
-            position: relative;
-            margin: 1em 0;
-        }
+.code-copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(100, 100, 100, 0.2);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: monospace;
+    transition: all 0.2s;
+}
 
-        .code-block-wrapper pre {
-            margin: 0;
-            padding-right: 70px;
-        }
+.code-copy-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
 
-        .code-copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(100, 100, 100, 0.2);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            font-family: monospace;
-            transition: all 0.2s;
-        }
+/* Horizontal rule */
+.ai-bubble hr {
+    border: none;
+    border-top: 2px solid var(--border-color);
+    margin: 1.5em 0;
+    background: none;
+}
 
-        .code-copy-btn:hover {
-            background: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
+/* Links */
+.ai-bubble a {
+    color: var(--accent-color);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+}
 
-        /* Horizontal rule */
-        .ai-bubble hr {
-            border: none;
-            border-top: 2px solid var(--border-color);
-            margin: 1.5em 0;
-            background: none;
-        }
+.ai-bubble a:hover {
+    border-bottom-color: var(--accent-color);
+}
 
-        /* Links */
-        .ai-bubble a {
-            color: var(--accent-color);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.2s;
-        }
-
-        .ai-bubble a:hover {
-            border-bottom-color: var(--accent-color);
-        }
-
-        /* Images */
-        .ai-bubble img {
-            max-width: 100%;
-            border-radius: 12px;
-            margin: 0.8em 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
+/* Images */
+.ai-bubble img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin: 0.8em 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
 
         .typing-dots {
             display: flex;
