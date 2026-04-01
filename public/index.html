@@ -207,12 +207,37 @@
     font-size: 15px;
 }
 
-/* Headings - Ukuran Kecil & Proporsional */
-.ai-bubble h1 { font-size: 1.3em; margin: 0.8em 0 0.4em; font-weight: 600; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.3em; }
-.ai-bubble h2 { font-size: 1.2em; margin: 0.7em 0 0.3em; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em; }
-.ai-bubble h3 { font-size: 1.1em; margin: 0.6em 0 0.2em; font-weight: 600; }
-.ai-bubble h4 { font-size: 1em; margin: 0.5em 0 0.2em; font-weight: 600; }
-.ai-bubble h5, .ai-bubble h6 { font-size: 0.95em; margin: 0.4em 0 0.2em; font-weight: 600; }
+/* Headings - Ukuran SAMA KAYAK TEKS BIASA (1em = 15px) */
+.ai-bubble h1 { 
+    font-size: 1.1em; 
+    margin: 0.8em 0 0.4em; 
+    font-weight: 600; 
+    border-bottom: 2px solid var(--accent-color); 
+    padding-bottom: 0.3em;
+    letter-spacing: -0.01em;
+}
+.ai-bubble h2 { 
+    font-size: 1.05em; 
+    margin: 0.7em 0 0.3em; 
+    font-weight: 600; 
+    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 0.2em;
+}
+.ai-bubble h3 { 
+    font-size: 1em; 
+    margin: 0.6em 0 0.2em; 
+    font-weight: 600; 
+}
+.ai-bubble h4 { 
+    font-size: 0.95em; 
+    margin: 0.5em 0 0.2em; 
+    font-weight: 600; 
+}
+.ai-bubble h5, .ai-bubble h6 { 
+    font-size: 0.9em; 
+    margin: 0.4em 0 0.2em; 
+    font-weight: 600; 
+}
 
 /* Bold & Italic */
 .ai-bubble strong { 
@@ -255,7 +280,7 @@
     opacity: 0.9;
 }
 
-/* TABEL - KAYAK GEMINI/DEEPSEEK */
+/* TABEL - KAYAK GEMINI/DEEPSEEK (FIXED) */
 .ai-bubble table {
     border-collapse: collapse;
     margin: 1em 0;
@@ -264,6 +289,7 @@
     display: block;
     border-radius: 12px;
     font-size: 14px;
+    border: 1px solid var(--border-color);
 }
 
 .ai-bubble table thead {
@@ -701,10 +727,28 @@ function parseMarkdown(text) {
     // 10. Handle images
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
     
-    // 11. Handle horizontal rule
+    // 11. Handle tables - FIXED (biar ga kosong)
+    // Deteksi tabel dengan format | A | B | dan baris pemisah |---|---|
+    const tableRegex = /\n(\|.+\|)\n(\|[-:\| ]+\|)\n((?:\|.+\|\n?)+)/g;
+    html = html.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
+        // Parse header
+        const headers = headerRow.split('|').filter(cell => cell.trim()).map(cell => `<th>${cell.trim()}</th>`);
+        const headerHtml = `<thead><tr>${headers.join('')}<\/thead>`;
+        
+        // Parse body
+        const rows = bodyRows.trim().split('\n');
+        const bodyHtml = rows.map(row => {
+            const cells = row.split('|').filter(cell => cell.trim()).map(cell => `<td>${cell.trim()}</td>`);
+            return `<tr>${cells.join('')}<\/tr>`;
+        }).join('');
+        
+        return `<table>${headerHtml}<tbody>${bodyHtml}<\/tbody><\/table>`;
+    });
+    
+    // 12. Handle horizontal rule
     html = html.replace(/^---$/gm, '<hr>');
     
-    // 12. Handle newlines to <br>
+    // 13. Handle newlines to <br>
     html = html.replace(/\n/g, '<br>');
     
     return html;
