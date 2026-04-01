@@ -211,13 +211,13 @@
 .ai-bubble .colon-list {
     list-style-type: none;
     padding-left: 0;
-    margin: 0.6em 0;
+    margin: 0.8em 0;
 }
 
 .ai-bubble .colon-list li {
     position: relative;
     padding-left: 1.5em;
-    margin: 0.3em 0;
+    margin: 0.4em 0;
     line-height: 1.5;
 }
 
@@ -702,69 +702,72 @@ function parseMarkdown(text) {
     
     let html = text;
     
-    // 0. Bersihin tabel kosong (yang cuma | | | tanpa isi)
-    html = html.replace(/\n\|[\s\|]*\|\n/g, '\n');
+    // ============ STEP 1: BERSIHIN DULU ============
+    // Hapus tabel kosong yang cuma berisi | dan spasi
+    html = html.replace(/\n?\|[\s\|]*\|\n?/g, '\n');
     
-    // 1. Handle code blocks
+    // Hapus baris pemisah tabel yang kosong (|---|)
+    html = html.replace(/\n?\|[-:\| ]+\|\n?/g, '\n');
+    
+    // ============ STEP 2: HANDLE CODE BLOCKS ============
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
         const language = lang || 'plaintext';
         const escapedCode = escapeHtmlSimple(code.trim());
         return `<div class="code-block-wrapper"><pre><code class="language-${language}">${escapedCode}</code></pre><button class="code-copy-btn" onclick="copyCodeBlock(this)"><i class="fa-regular fa-copy"></i> Salin</button></div>`;
     });
     
-    // 2. Inline code
+    // ============ STEP 3: INLINE CODE ============
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
     
-    // 3. Bold
+    // ============ STEP 4: BOLD & ITALIC ============
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // 4. Italic
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     
-    // 5. Headings
+    // ============ STEP 5: HEADINGS ============
     html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
     html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
     
-    // 6. Blockquote
+    // ============ STEP 6: BLOCKQUOTE ============
     html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
     
-    // 7. Handle unordered lists dengan : (titik dua) - FIX YANG PENTING!
-    // Cari baris yang dimulai dengan ": " (titik dua spasi)
-    let colonLines = [];
+    // ============ STEP 7: LIST DENGAN : (TITIK DUA) ============
+    // Proses per baris untuk handle list dengan :
     let lines = html.split('\n');
+    let processedLines = [];
     let inColonList = false;
     let colonItems = [];
-    let newLines = [];
     
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
-        // Deteksi list dengan :
-        if (line.match(/^: /)) {
+        // Deteksi baris yang dimulai dengan ": " (titik dua spasi)
+        if (line.trim().match(/^: /)) {
             if (!inColonList) {
                 inColonList = true;
                 colonItems = [];
             }
-            colonItems.push(line.replace(/^: /, ''));
+            // Ambil teks setelah ": "
+            let itemText = line.trim().replace(/^: /, '');
+            colonItems.push(itemText);
         } else {
+            // Jika sebelumnya dalam list, tutup list dulu
             if (inColonList && colonItems.length > 0) {
-                // Render list
                 const itemsHtml = colonItems.map(item => `<li>${item}</li>`).join('');
-                newLines.push(`<ul class="colon-list">${itemsHtml}</ul>`);
+                processedLines.push(`<ul class="colon-list">${itemsHtml}</ul>`);
                 inColonList = false;
                 colonItems = [];
             }
-            newLines.push(line);
+            processedLines.push(line);
         }
     }
     // Handle jika list di akhir
     if (inColonList && colonItems.length > 0) {
         const itemsHtml = colonItems.map(item => `<li>${item}</li>`).join('');
-        newLines.push(`<ul class="colon-list">${itemsHtml}</ul>`);
+        processedLines.push(`<ul class="colon-list">${itemsHtml}</ul>`);
     }
-    html = newLines.join('\n');
+    html = processedLines.join('\n');
     
-    // 8. Handle unordered lists (dengan -)
+    // ============ STEP 8: LIST DENGAN - ============
     let ulMatch = html.match(/(?:^- (.*$)\n?)+/gm);
     if (ulMatch) {
         ulMatch.forEach(match => {
@@ -773,7 +776,7 @@ function parseMarkdown(text) {
         });
     }
     
-    // 9. Handle ordered lists
+    // ============ STEP 9: LIST DENGAN ANGKA ============
     let olMatch = html.match(/(?:^\d+\. (.*$)\n?)+/gm);
     if (olMatch) {
         olMatch.forEach(match => {
@@ -782,38 +785,46 @@ function parseMarkdown(text) {
         });
     }
     
-    // 10. Links
+    // ============ STEP 10: LINKS ============
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     
-    // 11. Images
+    // ============ STEP 11: IMAGES ============
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
     
-    // 12. Tables
+    // ============ STEP 12: TABEL (HANYA YANG VALID) ============
     const tableRegex = /\n(\|.+\|)\n(\|[-:\| ]+\|)\n((?:\|.+\|\n?)+)/g;
     html = html.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
-        // Skip kalo tabel kosong
-        if (headerRow.replace(/\|/g, '').trim() === '') return '';
-        
-        const headers = headerRow.split('|').filter(cell => cell.trim()).map(cell => `<th>${cell.trim()}</th>`);
+        // Validasi: cek apakah header dan body ada isinya
+        const headers = headerRow.split('|').filter(cell => cell.trim().length > 0);
         if (headers.length === 0) return '';
         
-        const headerHtml = `<thead><tr>${headers.join('')}<\/thead>`;
-        const rows = bodyRows.trim().split('\n');
+        // Cek body rows
+        const rows = bodyRows.trim().split('\n').filter(row => row.trim().length > 0);
+        if (rows.length === 0) return '';
+        
+        const headerHtml = `<thead><td>${headers.map(h => `<th>${h.trim()}</th>`).join('')}<\/thead>`;
+        
         const bodyHtml = rows.map(row => {
-            const cells = row.split('|').filter(cell => cell.trim()).map(cell => `<td>${cell.trim()}觅`);
+            const cells = row.split('|').filter(cell => cell.trim().length > 0);
             if (cells.length === 0) return '';
-            return `<tr>${cells.join('')}<\/tr>`;
+            return `<tr>${cells.map(c => `<td>${c.trim()}觅`).join('')}<\/tr>`;
         }).filter(row => row !== '').join('');
         
         if (bodyHtml === '') return '';
-        return ` <table>${headerHtml}<tbody>${bodyHtml}<\/tbody><\/table>`;
+        
+        return ` 表格${headerHtml}<tbody>${bodyHtml}<\/tbody><\/table>`;
     });
     
-    // 13. Horizontal rule
+    // ============ STEP 13: HORIZONTAL RULE ============
     html = html.replace(/^---$/gm, '<hr>');
     
-    // 14. Newlines to <br>
+    // ============ STEP 14: NEWLINES TO <br> ============
     html = html.replace(/\n/g, '<br>');
+    
+    // ============ STEP 15: CLEANUP ============
+    // Hapus <br> yang berlebihan di dalam tag
+    html = html.replace(/<br>\s*<(ul|ol|table|blockquote|h1|h2|h3|pre)/g, '<$1');
+    html = html.replace(/<\/(ul|ol|table|blockquote|h1|h2|h3|pre)><br>/g, '</$1>');
     
     return html;
 }
