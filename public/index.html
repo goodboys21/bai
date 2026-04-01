@@ -207,6 +207,26 @@
     font-size: 15px;
 }
 
+/* Custom list untuk format : (titik dua) */
+.ai-bubble .colon-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.ai-bubble .colon-list li {
+    position: relative;
+    padding-left: 1.5em;
+}
+
+.ai-bubble .colon-list li::before {
+    content: "•";
+    color: var(--accent-color);
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
 /* Headings - Ukuran SAMA KAYAK TEKS BIASA (1em = 15px) */
 .ai-bubble h1 { 
     font-size: 1.1em; 
@@ -703,7 +723,16 @@ function parseMarkdown(text) {
     // 6. Handle blockquote
     html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
     
-    // 7. Handle unordered lists
+    // 7. Handle unordered lists dengan : (titik dua) - FIX UNGU KOSONG
+    let colonListMatch = html.match(/(?:^: (.*$)\n?)+/gm);
+    if (colonListMatch) {
+        colonListMatch.forEach(match => {
+            const items = match.match(/^: (.*$)/gm).map(item => `<li>${item.replace(/^: /, '')}</li>`).join('');
+            html = html.replace(match, `<ul class="colon-list">${items}</ul>`);
+        });
+    }
+    
+    // 8. Handle unordered lists (dengan -)
     let ulMatch = html.match(/(?:^- (.*$)\n?)+/gm);
     if (ulMatch) {
         ulMatch.forEach(match => {
@@ -712,7 +741,7 @@ function parseMarkdown(text) {
         });
     }
     
-    // 8. Handle ordered lists
+    // 9. Handle ordered lists
     let olMatch = html.match(/(?:^\d+\. (.*$)\n?)+/gm);
     if (olMatch) {
         olMatch.forEach(match => {
@@ -721,34 +750,29 @@ function parseMarkdown(text) {
         });
     }
     
-    // 9. Handle links
+    // 10. Handle links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     
-    // 10. Handle images
+    // 11. Handle images
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
     
-    // 11. Handle tables - FIXED (biar ga kosong)
-    // Deteksi tabel dengan format | A | B | dan baris pemisah |---|---|
+    // 12. Handle tables
     const tableRegex = /\n(\|.+\|)\n(\|[-:\| ]+\|)\n((?:\|.+\|\n?)+)/g;
     html = html.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
-        // Parse header
         const headers = headerRow.split('|').filter(cell => cell.trim()).map(cell => `<th>${cell.trim()}</th>`);
         const headerHtml = `<thead><tr>${headers.join('')}<\/thead>`;
-        
-        // Parse body
         const rows = bodyRows.trim().split('\n');
         const bodyHtml = rows.map(row => {
             const cells = row.split('|').filter(cell => cell.trim()).map(cell => `<td>${cell.trim()}</td>`);
             return `<tr>${cells.join('')}<\/tr>`;
         }).join('');
-        
-        return `<table>${headerHtml}<tbody>${bodyHtml}<\/tbody><\/table>`;
+        return `<td>${headerHtml}<tbody>${bodyHtml}<\/tbody><\/table>`;
     });
     
-    // 12. Handle horizontal rule
+    // 13. Handle horizontal rule
     html = html.replace(/^---$/gm, '<hr>');
     
-    // 13. Handle newlines to <br>
+    // 14. Handle newlines to <br>
     html = html.replace(/\n/g, '<br>');
     
     return html;
