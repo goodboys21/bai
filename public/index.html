@@ -7,37 +7,38 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #ffffff;
-            --text-color: #1a1a1a;
-            --sidebar-bg: #f5f5f7;
-            --card-bg: #f0f0f2;
-            --border-color: #ddd;
-            --input-bg: #f0f0f2;
-            --icon-color: #555;
-            --theme-icon: #f59e0b;
-            --user-bubble: #e3f2fd;
-            --ai-bubble: #f1f1f1;
-            --shadow: rgba(0,0,0,0.05);
-            --accent-color: #8b8bff;
-            --code-bg: #1e1e1e;
-            --code-text: #d4d4d4;
-        }
+    --bg-color: #ffffff;
+    --text-color: #1a1a1a;
+    --sidebar-bg: #f5f5f7;
+    --card-bg: #f0f0f2;
+    --border-color: #ddd;
+    --input-bg: #f0f0f2;
+    --icon-color: #555;
+    --theme-icon: #f59e0b;
+    --user-bubble: #e3f2fd;
+    --ai-bubble: #f1f1f1;
+    --shadow: rgba(0,0,0,0.05);
+    --accent-color: #8b8bff;
+    --code-bg: #f6f8fa;      /* Light mode: background abu-abu muda */
+    --code-text: #24292e;    /* Light mode: teks gelap */
+}
 
-        [data-theme="dark"] {
-            --bg-color: #0a0a0a;
-            --text-color: white;
-            --sidebar-bg: #0f0f12;
-            --card-bg: #1e1e1e;
-            --border-color: #333;
-            --input-bg: #1e1e1e;
-            --icon-color: #888;
-            --theme-icon: #a78bfa;
-            --user-bubble: #0b3d91;
-            --ai-bubble: #262626;
-            --shadow: rgba(0,0,0,0.3);
-            --code-bg: #2d2d2d;
-            --code-text: #e0e0e0;
-        }
+[data-theme="dark"] {
+    --bg-color: #0a0a0a;
+    --text-color: white;
+    --sidebar-bg: #0f0f12;
+    --card-bg: #1e1e1e;
+    --border-color: #333;
+    --input-bg: #1e1e1e;
+    --icon-color: #888;
+    --theme-icon: #a78bfa;
+    --user-bubble: #0b3d91;
+    --ai-bubble: #262626;
+    --shadow: rgba(0,0,0,0.3);
+    --accent-color: #a78bfa;
+    --code-bg: #1e1e2e;      /* Dark mode: background gelap kebiruan */
+    --code-text: #e4e4e7;    /* Dark mode: teks terang */
+}
 
         * {
             margin: 0; padding: 0;
@@ -199,321 +200,406 @@
         .user-bubble { align-self: flex-end; background-color: var(--user-bubble); border-bottom-right-radius: 4px; }
         .ai-bubble { align-self: flex-start; background-color: var(--ai-bubble); border-bottom-left-radius: 4px; }
 
-        /* MARKDOWN STYLES */
-        .ai-bubble .message-text {
-            word-wrap: break-word;
-            line-height: 1.6;
-        }
-        
-        /* Headings */
-        .ai-bubble h1 { font-size: 1.8em; margin: 0.8em 0 0.4em; font-weight: bold; border-bottom: 2px solid var(--border-color); padding-bottom: 0.3em; }
-        .ai-bubble h2 { font-size: 1.5em; margin: 0.7em 0 0.3em; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em; }
-        .ai-bubble h3 { font-size: 1.3em; margin: 0.6em 0 0.2em; font-weight: bold; }
-        .ai-bubble h4, .ai-bubble h5, .ai-bubble h6 { font-size: 1.1em; margin: 0.5em 0 0.2em; font-weight: bold; }
-        
-        /* Bold & Italic */
-        .ai-bubble strong { font-weight: 700; color: var(--accent-color); }
-        .ai-bubble em { font-style: italic; }
-        
-        /* Lists */
-        .ai-bubble ul, .ai-bubble ol { margin: 0.5em 0; padding-left: 1.5em; }
-        .ai-bubble li { margin: 0.2em 0; }
-        .ai-bubble ul { list-style-type: disc; }
-        .ai-bubble ol { list-style-type: decimal; }
-        
-        /* Blockquote */
-        .ai-bubble blockquote {
-            border-left: 4px solid var(--accent-color);
-            margin: 0.8em 0;
-            padding: 0.5em 1em;
-            background: rgba(139, 139, 255, 0.1);
-            border-radius: 0 8px 8px 0;
-            font-style: italic;
-        }
-        
-        /* Code Block */
-        .ai-bubble pre {
-            background: var(--code-bg);
-            color: var(--code-text);
-            padding: 1em;
-            border-radius: 12px;
-            overflow-x: auto;
-            margin: 0.8em 0;
-            position: relative;
-            font-family: 'Fira Code', 'Consolas', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        
-        .ai-bubble code {
-            font-family: 'Fira Code', 'Consolas', monospace;
-            font-size: 0.9em;
-        }
-        
-        /* Inline code */
-        .ai-bubble :not(pre) > code {
-            background: rgba(139, 139, 255, 0.15);
-            padding: 0.2em 0.4em;
-            border-radius: 6px;
-            font-size: 0.85em;
-            color: var(--accent-color);
-        }
-        
-        /* Code block wrapper dengan tombol copy */
-        .code-block-wrapper {
-            position: relative;
-            margin: 0.8em 0;
-        }
-        
-        .code-block-wrapper pre {
-            margin: 0;
-        }
-        
-        .code-copy-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: var(--text-color);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            cursor: pointer;
-            font-family: monospace;
-            transition: all 0.2s;
-            backdrop-filter: blur(4px);
-        }
-        
-        .code-copy-btn:hover {
-            background: rgba(139, 139, 255, 0.8);
-            color: white;
-        }
-        
-        /* Tables */
-        .ai-bubble table {
-            border-collapse: collapse;
-            margin: 0.8em 0;
-            width: 100%;
-            overflow-x: auto;
-            display: block;
-        }
-        
-        .ai-bubble th, .ai-bubble td {
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            text-align: left;
-        }
-        
-        .ai-bubble th {
-            background: rgba(139, 139, 255, 0.15);
-            font-weight: bold;
-        }
-        
-        /* Horizontal rule */
-        .ai-bubble hr {
-            border: none;
-            border-top: 2px solid var(--border-color);
-            margin: 1em 0;
-        }
-        
-        /* Links */
-        .ai-bubble a {
-            color: var(--accent-color);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.2s;
-        }
-        
-        .ai-bubble a:hover {
-            border-bottom-color: var(--accent-color);
-        }
-        
-        /* Images */
-        .ai-bubble img {
-            max-width: 100%;
-            border-radius: 12px;
-            margin: 0.5em 0;
-        }
-        
-        .typing-dots {
-            display: flex;
-            gap: 6px;
-            padding: 8px 0;
-            align-items: center;
-        }
-        
-        .typing-dots .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--icon-color);
-            border-radius: 50%;
-            animation: typingBounce 1.2s infinite ease-in-out;
-        }
-        
-        .typing-dots .dot:nth-child(1) { animation-delay: 0s; }
-        .typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes typingBounce {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.4;
-            }
-            30% {
-                transform: translateY(-8px);
-                opacity: 1;
-            }
-        }
-        
-        .copy-btn { 
-            position: absolute; 
-            bottom: 8px; 
-            left: 16px; 
-            font-size: 11px; 
-            cursor: pointer; 
-            opacity: 0.6; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px; 
-        }
-        
-        .copy-btn:hover { opacity: 1; }
-        
-        .chat-image-container {
-            margin-top: 8px;
-            position: relative;
-            display: inline-block;
-            width: 200px;
-            height: 200px;
-            border-radius: 16px;
-            overflow: hidden;
-            background: var(--card-bg);
-            cursor: pointer;
-        }
-        
-        .chat-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.2s;
-        }
-        
-        .chat-image:hover {
-            transform: scale(1.02);
-        }
-        
-        .message-with-image {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        
-        .image-preview-container {
-            position: relative;
-            width: 70px;
-            height: 70px;
-            border-radius: 12px;
-            overflow: visible;
-            background: var(--card-bg);
-            margin-bottom: 8px;
-            display: inline-block;
-            border: 2px solid var(--accent-color);
-        }
-        
-        .image-preview-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-        
-        .remove-img-btn {
-            position: absolute;
-            top: -12px;
-            right: -12px;
-            background: #ff4d4d;
-            color: white;
-            border-radius: 50%;
-            width: 26px;
-            height: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border: 2px solid var(--bg-color);
-            z-index: 20;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            transition: transform 0.2s, background 0.2s;
-        }
-        
-        .remove-img-btn:hover {
-            transform: scale(1.1);
-            background: #ff3333;
-        }
-        
-        .preview-area {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+/* MARKDOWN STYLES - VERSION PREMIUM */
+.ai-bubble .message-text {
+    word-wrap: break-word;
+    line-height: 1.6;
+    font-size: 15px;
+}
 
-        footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
-        .input-box { width: 100%; max-width: 500px; margin: 0 auto; background: var(--input-bg); border-radius: 24px; padding: 8px 16px; border: 1px solid var(--border-color); }
-        .input-row { display: flex; align-items: flex-end; gap: 12px; width: 100%; }
-        
-        textarea {
-            background: transparent; border: none; outline: none; color: var(--text-color); 
-            flex: 1; font-size: 16px; padding: 10px 0; resize: none; max-height: 150px;
-            line-height: 1.5; overflow-y: auto;
-        }
+/* Headings - Ukuran Proporsional */
+.ai-bubble h1 { 
+    font-size: 1.6em; 
+    margin: 1em 0 0.5em; 
+    font-weight: 700; 
+    border-bottom: 2px solid var(--accent-color); 
+    padding-bottom: 0.3em;
+    letter-spacing: -0.02em;
+}
+.ai-bubble h2 { 
+    font-size: 1.4em; 
+    margin: 0.9em 0 0.4em; 
+    font-weight: 600; 
+    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 0.2em;
+}
+.ai-bubble h3 { 
+    font-size: 1.2em; 
+    margin: 0.8em 0 0.3em; 
+    font-weight: 600; 
+}
+.ai-bubble h4 { 
+    font-size: 1.1em; 
+    margin: 0.7em 0 0.2em; 
+    font-weight: 600; 
+}
+.ai-bubble h5, .ai-bubble h6 { 
+    font-size: 1em; 
+    margin: 0.6em 0 0.2em; 
+    font-weight: 600; 
+}
 
-        .icon-btn { 
-            color: var(--icon-color); 
-            cursor: pointer; 
-            font-size: 18px; 
-            margin-bottom: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .icon-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .send-btn-active {
-            color: var(--accent-color) !important;
-        }
-        
-        .stop-btn {
-            color: #ff4d4d !important;
-        }
-        
-        #inner-preview { display: none; }
-        
-        .image-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-        .image-modal img {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            border-radius: 8px;
-        }
-    </style>
+/* Bold & Italic */
+.ai-bubble strong { 
+    font-weight: 700; 
+    color: var(--accent-color); 
+}
+.ai-bubble em { 
+    font-style: italic; 
+}
+
+/* Lists - Rapi dan Berjarak */
+.ai-bubble ul, .ai-bubble ol { 
+    margin: 0.6em 0; 
+    padding-left: 1.8em; 
+}
+.ai-bubble li { 
+    margin: 0.3em 0; 
+    line-height: 1.5;
+}
+.ai-bubble ul { 
+    list-style-type: disc; 
+}
+.ai-bubble ol { 
+    list-style-type: decimal; 
+}
+.ai-bubble ul ul, .ai-bubble ol ul {
+    list-style-type: circle;
+    margin: 0.2em 0;
+}
+
+/* Blockquote - Kayak ChatGPT */
+.ai-bubble blockquote {
+    border-left: 4px solid var(--accent-color);
+    margin: 0.8em 0;
+    padding: 0.6em 1em;
+    background: rgba(139, 139, 255, 0.08);
+    border-radius: 0 12px 12px 0;
+    font-style: normal;
+    color: var(--text-color);
+    opacity: 0.9;
+}
+
+/* TABEL - KAYAK GEMINI/DEEPSEEK */
+.ai-bubble table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.ai-bubble table thead {
+    background: rgba(139, 139, 255, 0.15);
+}
+
+.ai-bubble th, .ai-bubble td {
+    border: 1px solid var(--border-color);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.ai-bubble th {
+    background: rgba(139, 139, 255, 0.2);
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* Alternating row colors untuk tabel */
+.ai-bubble tbody tr:nth-child(even) {
+    background: rgba(139, 139, 255, 0.05);
+}
+
+.ai-bubble tbody tr:hover {
+    background: rgba(139, 139, 255, 0.1);
+    transition: background 0.2s;
+}
+
+/* Code Block - Modern Style */
+.ai-bubble pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1em;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 1em 0;
+    position: relative;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--border-color);
+}
+
+.ai-bubble code {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Inline code - Soft Background */
+.ai-bubble :not(pre) > code {
+    background: rgba(139, 139, 255, 0.12);
+    padding: 0.2em 0.5em;
+    border-radius: 6px;
+    font-size: 0.85em;
+    color: var(--accent-color);
+    font-weight: 500;
+}
+
+/* Code block wrapper dengan tombol copy */
+.code-block-wrapper {
+    position: relative;
+    margin: 1em 0;
+}
+
+.code-block-wrapper pre {
+    margin: 0;
+    padding-right: 70px;
+}
+
+.code-copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(100, 100, 100, 0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--text-color);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: monospace;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.code-copy-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+/* Horizontal rule */
+.ai-bubble hr {
+    border: none;
+    border-top: 2px solid var(--border-color);
+    margin: 1.5em 0;
+    background: none;
+}
+
+/* Links */
+.ai-bubble a {
+    color: var(--accent-color);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.ai-bubble a:hover {
+    border-bottom-color: var(--accent-color);
+}
+
+/* Images */
+.ai-bubble img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin: 0.8em 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Paragraph spacing */
+.ai-bubble p {
+    margin: 0.6em 0;
+}
+
+/* Small text */
+.ai-bubble small {
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 6px;
+    padding: 8px 0;
+    align-items: center;
+}
+
+.typing-dots .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--icon-color);
+    border-radius: 50%;
+    animation: typingBounce 1.2s infinite ease-in-out;
+}
+
+.typing-dots .dot:nth-child(1) { animation-delay: 0s; }
+.typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-8px);
+        opacity: 1;
+    }
+}
+
+.copy-btn { 
+    position: absolute; 
+    bottom: 8px; 
+    left: 16px; 
+    font-size: 11px; 
+    cursor: pointer; 
+    opacity: 0.6; 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+}
+
+.copy-btn:hover { opacity: 1; }
+
+.chat-image-container {
+    margin-top: 8px;
+    position: relative;
+    display: inline-block;
+    width: 200px;
+    height: 200px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--card-bg);
+    cursor: pointer;
+}
+
+.chat-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s;
+}
+
+.chat-image:hover {
+    transform: scale(1.02);
+}
+
+.message-with-image {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.image-preview-container {
+    position: relative;
+    width: 70px;
+    height: 70px;
+    border-radius: 12px;
+    overflow: visible;
+    background: var(--card-bg);
+    margin-bottom: 8px;
+    display: inline-block;
+    border: 2px solid var(--accent-color);
+}
+
+.image-preview-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.remove-img-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #ff4d4d;
+    color: white;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid var(--bg-color);
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.remove-img-btn:hover {
+    transform: scale(1.1);
+    background: #ff3333;
+}
+
+.preview-area {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+footer { flex-shrink: 0; padding: 10px 15px; background-color: var(--bg-color); z-index: 2000; border-top: 1px solid var(--border-color); }
+.input-box { width: 100%; max-width: 500px; margin: 0 auto; background: var(--input-bg); border-radius: 24px; padding: 8px 16px; border: 1px solid var(--border-color); }
+.input-row { display: flex; align-items: flex-end; gap: 12px; width: 100%; }
+
+textarea {
+    background: transparent; border: none; outline: none; color: var(--text-color); 
+    flex: 1; font-size: 16px; padding: 10px 0; resize: none; max-height: 150px;
+    line-height: 1.5; overflow-y: auto;
+}
+
+.icon-btn { 
+    color: var(--icon-color); 
+    cursor: pointer; 
+    font-size: 18px; 
+    margin-bottom: 10px;
+    transition: transform 0.2s;
+}
+
+.icon-btn:hover {
+    transform: scale(1.05);
+}
+
+.send-btn-active {
+    color: var(--accent-color) !important;
+}
+
+.stop-btn {
+    color: #ff4d4d !important;
+}
+
+#inner-preview { display: none; }
+
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.image-modal img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+}
 </head>
 <body>
 
